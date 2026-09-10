@@ -7,6 +7,12 @@ class ApiConstants {
   static String get login => '$baseUrl/api/auth/login2';
   static String get checkLabel => '$baseUrl/api/label-list/check';
   static String get saveChanges => '$baseUrl/api/label-list/save-changes';
+
+  // Mapping Lokasi (flow baru)
+  static String get mappingLokasiSummary =>
+      '$baseUrl/api/mapping/lokasi-summary';
+  static String mappingLokasiLabels(String idLokasi) =>
+      '$baseUrl/api/mapping/lokasi-labels?idlokasi=${Uri.encodeComponent(idLokasi)}';
   static String get listNoSO => '$baseUrl/api/no-stock-opname';
   static String get listNyangkut => '$baseUrl/api/nyangkut-list';
   static String get listNoKD => '$baseUrl/api/kd-bongkar';

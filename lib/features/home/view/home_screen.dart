@@ -78,9 +78,9 @@ class _HomeScreenState extends State<HomeScreen> {
             IndexedStack(
               index: _currentIndex,
               children: [
-                _buildBerandaTab(context),     // 0
-                _buildMappingTab(context),     // 1
-                _buildAkunTab(context),        // 2
+                _buildBerandaTab(context), // 0
+                _buildMappingTab(context), // 1
+                _buildAkunTab(context), // 2
               ],
             ),
 
@@ -127,7 +127,8 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          begin: Alignment.topCenter, end: Alignment.bottomCenter,
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
           colors: [const Color(0xFF755330).withOpacity(0.05), Colors.white],
         ),
       ),
@@ -165,7 +166,9 @@ class _HomeScreenState extends State<HomeScreen> {
           subtitle: 'Kelola posisi setelah KD',
           icon: Icons.warehouse_outlined,
           color: const Color(0xFF755330),
-          onTap: _can('bongkar_kd:read') ? () => Navigator.pushNamed(context, '/bongkarkd') : null,
+          onTap: _can('bongkar_kd:read')
+              ? () => Navigator.pushNamed(context, '/bongkarkd')
+              : null,
           disabled: !_can('bongkar_kd:read'),
         ),
       ],
@@ -225,13 +228,18 @@ class _HomeScreenState extends State<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Selamat Datang',
-                    style: TextStyle(fontSize: 16, color: Colors.white.withOpacity(0.9))),
+                    style: TextStyle(
+                        fontSize: 16, color: Colors.white.withOpacity(0.9))),
                 const SizedBox(height: 4),
                 const Text('WPS Mobile',
-                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
+                    style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white)),
                 const SizedBox(height: 8),
                 Text('Wood Processing System',
-                    style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.8))),
+                    style: TextStyle(
+                        fontSize: 14, color: Colors.white.withOpacity(0.8))),
               ],
             ),
           ),
@@ -253,7 +261,10 @@ class _HomeScreenState extends State<HomeScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('Menu Utama',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
+            style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87)),
         const SizedBox(height: 16),
 
         _menuCardGuarded(
@@ -320,6 +331,17 @@ class _HomeScreenState extends State<HomeScreen> {
           color: const Color(0xFF755330),
           onTap: () => Navigator.pushNamed(context, '/qc-sawmill'),
         ),
+        const SizedBox(height: 12),
+
+        _menuCardGuarded(
+          context,
+          allowed: _can('spk:read'),
+          title: 'QC Barang Jadi',
+          subtitle: 'QC per bundle sesuai SPK barang jadi',
+          icon: Icons.fact_check_outlined,
+          color: const Color(0xFF755330),
+          onTap: () => Navigator.pushNamed(context, '/qc-spk-bj'),
+        ),
         // const SizedBox(height: 12),
         //
         // _buildMenuCard(
@@ -337,14 +359,14 @@ class _HomeScreenState extends State<HomeScreen> {
   // ===== Reusable cards & guards =====
 
   Widget _menuCardGuarded(
-      BuildContext context, {
-        required bool allowed,
-        required String title,
-        required String subtitle,
-        required IconData icon,
-        required Color color,
-        required VoidCallback onTap,
-      }) {
+    BuildContext context, {
+    required bool allowed,
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
     final card = _buildMenuCard(
       context,
       title: title,
@@ -359,18 +381,19 @@ class _HomeScreenState extends State<HomeScreen> {
     return Tooltip(
       message: _deniedMsg,
       triggerMode: TooltipTriggerMode.longPress,
-      child: Opacity(opacity: 0.5, child: IgnorePointer(ignoring: true, child: card)),
+      child: Opacity(
+          opacity: 0.5, child: IgnorePointer(ignoring: true, child: card)),
     );
   }
 
   Widget _buildMenuCard(
-      BuildContext context, {
-        required String title,
-        required String subtitle,
-        required IconData icon,
-        required Color color,
-        required VoidCallback onTap,
-      }) {
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
     return Card(
       elevation: 4,
       shadowColor: Colors.black.withOpacity(0.1),
@@ -387,11 +410,17 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Icon(icon, color: color, size: 28),
         ),
         title: Text(title,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
-        subtitle: Text(subtitle, style: TextStyle(fontSize: 14, color: Colors.grey.shade600)),
+            style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87)),
+        subtitle: Text(subtitle,
+            style: TextStyle(fontSize: 14, color: Colors.grey.shade600)),
         trailing: Container(
           padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+          decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8)),
           child: Icon(Icons.arrow_forward_ios, color: color, size: 16),
         ),
       ),
@@ -409,7 +438,8 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          begin: Alignment.topCenter, end: Alignment.bottomCenter,
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
           colors: [const Color(0xFF755330).withOpacity(0.05), Colors.white],
         ),
       ),
@@ -419,7 +449,8 @@ class _HomeScreenState extends State<HomeScreen> {
           _miniHeader(title: title, subtitle: description),
           const SizedBox(height: 12),
           primary,
-          ...extras.map((w) => Padding(padding: const EdgeInsets.only(top: 12), child: w)),
+          ...extras.map((w) =>
+              Padding(padding: const EdgeInsets.only(top: 12), child: w)),
         ],
       ),
     );
@@ -449,9 +480,12 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Text(title,
                     style: const TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 16)),
                 const SizedBox(height: 2),
-                Text(subtitle, style: TextStyle(color: Colors.white.withOpacity(.9))),
+                Text(subtitle,
+                    style: TextStyle(color: Colors.white.withOpacity(.9))),
               ],
             ),
           ),
@@ -461,12 +495,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _primaryAction(
-      BuildContext context, {
-        required String label,
-        required IconData icon,
-        required VoidCallback? onTap,
-        String? disabledTooltip,
-      }) {
+    BuildContext context, {
+    required String label,
+    required IconData icon,
+    required VoidCallback? onTap,
+    String? disabledTooltip,
+  }) {
     final color = const Color(0xFF755330);
     final btn = ElevatedButton.icon(
       onPressed: onTap,
@@ -486,14 +520,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _quickCard(
-      BuildContext context, {
-        required String title,
-        required String subtitle,
-        required IconData icon,
-        required Color color,
-        required VoidCallback? onTap,
-        bool disabled = false,
-      }) {
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required VoidCallback? onTap,
+    bool disabled = false,
+  }) {
     final card = Card(
       elevation: 2,
       shadowColor: Colors.black.withOpacity(0.06),
@@ -512,12 +546,15 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
         subtitle: Text(subtitle),
-        trailing: Icon(Icons.chevron_right, color: disabled ? Colors.grey : color),
+        trailing:
+            Icon(Icons.chevron_right, color: disabled ? Colors.grey : color),
       ),
     );
 
     if (!disabled) return card;
-    return Tooltip(message: _deniedMsg, child: Opacity(opacity: .5, child: IgnorePointer(child: card)));
+    return Tooltip(
+        message: _deniedMsg,
+        child: Opacity(opacity: .5, child: IgnorePointer(child: card)));
   }
 
   // === Exit dialog ===
@@ -526,16 +563,20 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: const Text('Konfirmasi'),
           content: const Text('Apakah Anda yakin ingin keluar?'),
           actions: [
-            TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Tidak')),
+            TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Tidak')),
             ElevatedButton(
               onPressed: () => Navigator.of(context).pop(true),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF755330),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)),
               ),
               child: const Text('Ya', style: TextStyle(color: Colors.white)),
             ),

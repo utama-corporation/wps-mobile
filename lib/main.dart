@@ -17,6 +17,8 @@ import 'features/mesin_sawmill/repository/mesin_sawmill_repository.dart';
 import 'features/mesin_sawmill/view_model/mesin_sawmill_view_model.dart';
 import 'features/stock_opname/view/stock_opname_list_screen.dart';
 import 'features/mapping/view/mapping_lokasi_screen.dart';
+import 'features/qc_spk_bj/view/qc_spk_header_screen.dart';
+import 'features/qc_spk_bj/view_model/qc_spk_header_view_model.dart';
 import 'features/nyangkut/view/nyangkut_menu_screen.dart';
 import 'features/home/view/home_screen.dart';
 import 'features/stock_opname/view_model/stock_opname_list_view_model.dart';
@@ -53,6 +55,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => PDFViewModelST()),
         ChangeNotifierProvider(create: (_) => UserProfileViewModel()),
         ChangeNotifierProvider(create: (_) => MappingLokasiViewModel()),
+        ChangeNotifierProvider(create: (_) => QcSpkHeaderViewModel()),
         ChangeNotifierProvider(create: (_) => NyangkutListViewModel()),
         ChangeNotifierProvider(create: (_) => NyangkutDetailViewModel()),
         ChangeNotifierProvider(create: (_) => LokasiViewModel()),
@@ -66,14 +69,16 @@ class MyApp extends StatelessWidget {
           update: (_, api, __) => JenisKayuRepository(api),
         ),
         ChangeNotifierProvider(
-          create: (ctx) => JenisKayuViewModel(repo: ctx.read<JenisKayuRepository>()),
+          create: (ctx) =>
+              JenisKayuViewModel(repo: ctx.read<JenisKayuRepository>()),
         ),
         // Mesin Sawmill
         ProxyProvider<ApiClient, MesinSawmillRepository>(
           update: (_, api, __) => MesinSawmillRepository(api),
         ),
         ChangeNotifierProvider(
-          create: (ctx) => MesinSawmillViewModel(repo: ctx.read<MesinSawmillRepository>()),
+          create: (ctx) =>
+              MesinSawmillViewModel(repo: ctx.read<MesinSawmillRepository>()),
         ),
       ],
       child: MaterialApp(
@@ -94,6 +99,7 @@ class MyApp extends StatelessWidget {
           '/home': (context) => HomeScreen(),
           '/stockopname': (context) => StockOpnameListScreen(),
           '/mapping': (context) => MappingLokasiScreen(),
+          '/qc-spk-bj': (context) => const QcSpkHeaderScreen(),
           '/nyangkut': (context) => NyangkutMenuScreen(),
           '/bongkarkd': (context) => KdBongkarSelectedScreen(),
           '/kayu-bulat': (context) => KayuBulatScreen(),

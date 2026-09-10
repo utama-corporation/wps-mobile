@@ -7,23 +7,27 @@ import 'package:flutter/material.dart';
 class AppInfoCard extends StatelessWidget {
   final String title;
   final String? subtitle;               // contoh: tanggal
+  final IconData subtitleIcon;          // ikon kecil di depan subtitle
   final IconData leadingIcon;           // ikon besar di header
   final Color brandColor;               // warna utama header/ikon
   final List<InfoRowData> rows;         // konten body (ikon + label + value)
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
   final EdgeInsetsGeometry margin;
+  final Color? backgroundColor;   // warna dasar kartu (default putih)
 
   const AppInfoCard({
     super.key,
     required this.title,
     this.subtitle,
+    this.subtitleIcon = Icons.calendar_today,
     this.leadingIcon = Icons.description_outlined,
     this.brandColor = const Color(0xFF755330),
     this.rows = const [],
     this.onTap,
     this.onLongPress,
     this.margin = const EdgeInsets.only(bottom: 14),
+    this.backgroundColor,
   });
 
   @override
@@ -31,9 +35,10 @@ class AppInfoCard extends StatelessWidget {
     return Container(
       margin: margin,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: backgroundColor ?? Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(
+            color: backgroundColor != null ? brandColor : Colors.grey[200]!),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
@@ -96,7 +101,7 @@ class AppInfoCard extends StatelessWidget {
                             const SizedBox(height: 4),
                             Row(
                               children: [
-                                Icon(Icons.calendar_today,
+                                Icon(subtitleIcon,
                                     size: 13, color: Colors.grey[600]),
                                 const SizedBox(width: 6),
                                 Text(

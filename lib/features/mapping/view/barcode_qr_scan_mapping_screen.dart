@@ -111,10 +111,7 @@ class _BarcodeQrScanMappingScreenState extends State<BarcodeQrScanMappingScreen>
 
           final viewModel = Provider.of<MappingLokasiViewModel>(
               context, listen: false);
-          viewModel.fetchData(
-            filterBy: widget.selectedFilter,
-            idLokasi: widget.idLokasi,
-          );
+          viewModel.fetchLokasiLabels(widget.idLokasi);
 
           setState(() {
             _isSaving = false;
@@ -149,10 +146,7 @@ class _BarcodeQrScanMappingScreenState extends State<BarcodeQrScanMappingScreen>
         widget.idLokasi,
         onSaveComplete: (success, statusCode, message) {
           // Fetch data terbaru setelah menyimpan
-          viewModel.fetchData(
-            filterBy: widget.selectedFilter,
-            idLokasi: widget.idLokasi,
-          );
+          viewModel.fetchLokasiLabels(widget.idLokasi);
         },
       );
     }
@@ -230,7 +224,7 @@ class _BarcodeQrScanMappingScreenState extends State<BarcodeQrScanMappingScreen>
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
     final scanAreaSize = screenWidth * 0.6;
-    final count = Provider.of<MappingLokasiViewModel>(context).totalData;
+    final count = Provider.of<MappingLokasiViewModel>(context).totalLabelData;
 
     return WillPopScope(
         onWillPop: _popScannedCodesNotEmpty, // Memanggil fungsi konfirmasi keluar

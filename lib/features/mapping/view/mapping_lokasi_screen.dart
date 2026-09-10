@@ -1,600 +1,491 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_speed_dial/flutter_speed_dial.dart';
-import '../../../core/view_models/lokasi_view_model.dart';
 import '../view_model/mapping_lokasi_view_model.dart';
+import '../model/mapping_lokasi_model.dart';
 import '../../../core/widgets/loading_skeleton.dart';
-import 'barcode_qr_scan_mapping_screen.dart';
-import 'package:searchfield/searchfield.dart';
+import 'mapping_lokasi_label_screen.dart';
 
+/// Layar pertama flow Mapping Lokasi.
+///
+/// Menampilkan ringkasan setiap lokasi beserta jumlah label yang masih berada
+/// di lokasi tersebut (GET /api/mapping/lokasi-summary). Ketika salah satu
+/// lokasi dipilih, user diarahkan ke [MappingLokasiLabelScreen] untuk melihat
+/// detail label pada lokasi itu dan melakukan scan update lokasi.
 class MappingLokasiScreen extends StatefulWidget {
-  const MappingLokasiScreen({Key? key}) : super(key: key);
+  const MappingLokasiScreen({super.key});
 
   @override
-  _MappingLokasiScreenState createState() => _MappingLokasiScreenState();
+  State<MappingLokasiScreen> createState() => _MappingLokasiScreenState();
 }
 
 class _MappingLokasiScreenState extends State<MappingLokasiScreen> {
-  final TextEditingController _locationController = TextEditingController();
-  final ScrollController _scrollController = ScrollController();
-  String? _selectedFilter;
-  String? _selectedLocation;
-  bool isLoadingMore = false;
+  static const _brown = Color(0xFF755330);
+  static const _brownDark = Color(0xFF5A3F24);
+
+  final TextEditingController _searchController = TextEditingController();
+  String _keyword = '';
 
   @override
   void initState() {
     super.initState();
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final mappingVM = Provider.of<MappingLokasiViewModel>(context, listen: false);
-      final lokasiVM = Provider.of<LokasiViewModel>(context, listen: false);
-
-      lokasiVM.fetchLokasi();
-      mappingVM.fetchData();
+      context.read<MappingLokasiViewModel>().fetchLokasiSummary();
     });
-
-    _scrollController.addListener(() {
-      if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 100) {
-        if (!isLoadingMore) {
-          setState(() {
-            isLoadingMore = true;
-          });
-
-          final mappingVM = Provider.of<MappingLokasiViewModel>(context, listen: false);
-          mappingVM.loadMoreData().then((_) {
-            if (mounted) {
-              setState(() {
-                isLoadingMore = false;
-              });
-            }
-          });
-        }
-      }
+    _searchController.addListener(() {
+      setState(() => _keyword = _searchController.text.trim().toLowerCase());
     });
   }
 
   @override
   void dispose() {
-    _scrollController.dispose();
-    _locationController.dispose();
+    _searchController.dispose();
     super.dispose();
+  }
+
+  List<LokasiSummaryModel> _applyFilter(List<LokasiSummaryModel> source) {
+    if (_keyword.isEmpty) return source;
+    return source.where((l) {
+      return l.idLokasi.toLowerCase().contains(_keyword) ||
+          (l.description ?? '').toLowerCase().contains(_keyword);
+    }).toList();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF4F1EC),
       appBar: AppBar(
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        backgroundColor: _brown,
+        foregroundColor: Colors.white,
         title: const Text(
           'Mapping Lokasi',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
         ),
-        automaticallyImplyLeading: false,
-        backgroundColor: const Color(0xFF755330),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.filter_list, color: Colors.white),
-            onPressed: () {},
-          ),
-        ],
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              children: [
-                Expanded(
-                  flex: 1, // Bisa disesuaikan jika mau ukuran berbeda
-                  child: _buildFilterDropdown(),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  flex: 1,
-                  child: _buildLocationDropdown(),
-                ),
-              ],
-            ),
-          ),
-          // Tambahkan summary section untuk menampilkan total M3
-          _buildSummarySection(),
-          Expanded(
-            child: Consumer<MappingLokasiViewModel>(
-              builder: (context, viewModel, child) {
-                if (viewModel.isInitialLoading && viewModel.noLabelList.isEmpty) {
-                  return const LoadingSkeleton();
-                }
-
-                if (viewModel.errorMessage.isNotEmpty) {
-                  return Center(
-                    child: Text(
-                      viewModel.errorMessage,
-                      style: const TextStyle(color: Colors.red, fontSize: 16),
-                    ),
-                  );
-                }
-
-                if (!viewModel.noLabelFound) {
-                  return const Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.inbox,
-                          size: 48,
-                          color: Colors.grey,
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          'Tidak Ada Data',
-                          style: TextStyle(fontSize: 16, color: Colors.grey),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-
-                if (viewModel.isLoading && viewModel.noLabelList.isEmpty) {
-                  // Saat loading awal, tampilkan shimmer list
-                  return const LoadingSkeleton();
-                }
-
-                return ListView.builder(
-                  controller: _scrollController,
-                  itemCount: viewModel.noLabelList.length + (viewModel.isLoading ? 1 : 0),
-                  itemBuilder: (context, index) {
-                    if (index == viewModel.noLabelList.length) {
-                      // Loading bawah untuk infinite scroll
-                      return const Center(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(vertical: 16.0),
-                          child: CircularProgressIndicator(),
-                        ),
-                      );
-                    }
-
-                    final noLabel = viewModel.noLabelList[index];
-                    return _buildLabelCard(noLabel);
-                  },
-                  cacheExtent: 1000,
-                );
-
-              },
-            ),
-          ),
-        ],
-      ),
-      floatingActionButton: SpeedDial(
-        animatedIcon: AnimatedIcons.menu_close,
-        backgroundColor: const Color(0xFF755330),
-        foregroundColor: Colors.white,
-        visible: true,
-        curve: Curves.linear,
-        spaceBetweenChildren: 16,
-        children: [
-          SpeedDialChild(
-            child: const Icon(Icons.qr_code),
-            label: 'Scan QR',
-            onTap: () {
-              _showScanBarQRCode(context);
-            },
-          ),
-        ],
+      body: Consumer<MappingLokasiViewModel>(
+        builder: (context, vm, child) {
+          return Column(
+            children: [
+              _Header(
+                brown: _brown,
+                brownDark: _brownDark,
+                controller: _searchController,
+                totalLokasi: vm.lokasiSummaryList.length,
+                lokasiTerisi:
+                    vm.lokasiSummaryList.where((l) => l.jumlahLabel > 0).length,
+                totalLabel: vm.lokasiSummaryList
+                    .fold<int>(0, (s, l) => s + l.jumlahLabel),
+                loading: vm.isSummaryLoading && vm.lokasiSummaryList.isEmpty,
+              ),
+              Expanded(child: _buildBody(vm)),
+            ],
+          );
+        },
       ),
     );
   }
 
-  // Widget baru untuk menampilkan summary total M3
-  Widget _buildSummarySection() {
-    return Consumer<MappingLokasiViewModel>(
-      builder: (context, viewModel, child) {
-        // Asumsikan viewModel memiliki property summary atau cara mengakses LabelSummary
-        // Anda perlu menyesuaikan ini dengan struktur MappingLokasiViewModel Anda
-        return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          padding: const EdgeInsets.all(16.0),
-          decoration: BoxDecoration(
-            color: const Color(0xFF755330).withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8.0),
-            border: Border.all(color: const Color(0xFF755330).withOpacity(0.3)),
+  Widget _buildBody(MappingLokasiViewModel vm) {
+    if (vm.isSummaryLoading && vm.lokasiSummaryList.isEmpty) {
+      return const LoadingSkeleton();
+    }
+    if (vm.summaryError.isNotEmpty) {
+      return _StatePlaceholder(
+        onRefresh: vm.fetchLokasiSummary,
+        icon: Icons.cloud_off_rounded,
+        iconColor: Colors.redAccent,
+        title: 'Gagal memuat lokasi',
+        subtitle: vm.summaryError,
+      );
+    }
+
+    final data = _applyFilter(vm.lokasiSummaryList);
+    if (data.isEmpty) {
+      return _StatePlaceholder(
+        onRefresh: vm.fetchLokasiSummary,
+        icon: _keyword.isEmpty ? Icons.inbox_rounded : Icons.search_off_rounded,
+        iconColor: Colors.grey,
+        title: _keyword.isEmpty
+            ? 'Belum ada lokasi'
+            : 'Lokasi tidak ditemukan',
+        subtitle: _keyword.isEmpty
+            ? 'Tarik ke bawah untuk memuat ulang'
+            : 'Coba kata kunci lain',
+      );
+    }
+
+    return RefreshIndicator(
+      color: _brown,
+      onRefresh: vm.fetchLokasiSummary,
+      child: ListView.builder(
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 28),
+        itemCount: data.length,
+        itemBuilder: (context, index) => _LokasiCard(
+          brown: _brown,
+          lokasi: data[index],
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => MappingLokasiLabelScreen(
+                idLokasi: data[index].idLokasi,
+                blok: data[index].blok,
+              ),
+            ),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Header: gradient brand + statistik + search
+// ---------------------------------------------------------------------------
+class _Header extends StatelessWidget {
+  final Color brown;
+  final Color brownDark;
+  final TextEditingController controller;
+  final int totalLokasi;
+  final int lokasiTerisi;
+  final int totalLabel;
+  final bool loading;
+
+  const _Header({
+    required this.brown,
+    required this.brownDark,
+    required this.controller,
+    required this.totalLokasi,
+    required this.lokasiTerisi,
+    required this.totalLabel,
+    required this.loading,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [brown, brownDark],
+        ),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
+        ),
+      ),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 18),
+      child: Column(
+        children: [
+          Row(
             children: [
-              _buildSummaryItem(
-                'Total Label',
-                _formatNumber(viewModel.totalData),
-                Icons.label,
-                Colors.black,
+              Expanded(
+                child: _StatTile(
+                  value: loading ? '–' : '$totalLokasi',
+                  label: 'Total Lokasi',
+                  icon: Icons.warehouse_rounded,
+                ),
               ),
-              _buildSummaryItem(
-                'Total M³',
-                _formatM3(viewModel.summary?.totalM3),
-                Icons.view_in_ar,
-                Colors.orange,
+              _divider(),
+              Expanded(
+                child: _StatTile(
+                  value: loading ? '–' : '$lokasiTerisi',
+                  label: 'Terisi',
+                  icon: Icons.inventory_2_rounded,
+                ),
               ),
-              _buildSummaryItem(
-                'Total Pcs',
-                _formatNumber(viewModel.summary?.totalJumlah ?? 0),
-                Icons.format_list_numbered,
-                Colors.green,
+              _divider(),
+              Expanded(
+                child: _StatTile(
+                  value: loading ? '–' : _compact(totalLabel),
+                  label: 'Total Label',
+                  icon: Icons.label_rounded,
+                ),
               ),
             ],
           ),
-        );
-      },
+          const SizedBox(height: 16),
+          Material(
+            elevation: 2,
+            borderRadius: BorderRadius.circular(14),
+            child: TextField(
+              controller: controller,
+              textInputAction: TextInputAction.search,
+              decoration: InputDecoration(
+                hintText: 'Cari kode lokasi / keterangan',
+                prefixIcon: const Icon(Icons.search_rounded),
+                suffixIcon: controller.text.isEmpty
+                    ? null
+                    : IconButton(
+                        icon: const Icon(Icons.close_rounded),
+                        onPressed: controller.clear,
+                      ),
+                filled: true,
+                fillColor: Colors.white,
+                isDense: true,
+                contentPadding:
+                    const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildSummaryItem(String title, String value, IconData icon, Color color) {
+  Widget _divider() => Container(
+        width: 1,
+        height: 34,
+        color: Colors.white.withOpacity(0.22),
+      );
+
+  static String _compact(int v) {
+    if (v >= 1000000) return '${(v / 1000000).toStringAsFixed(1)}M';
+    if (v >= 1000) return '${(v / 1000).toStringAsFixed(1)}k';
+    return '$v';
+  }
+}
+
+class _StatTile extends StatelessWidget {
+  final String value;
+  final String label;
+  final IconData icon;
+
+  const _StatTile({
+    required this.value,
+    required this.label,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       children: [
-        Icon(icon, color: color, size: 24),
-        const SizedBox(height: 4),
+        Icon(icon, color: Colors.white.withOpacity(0.85), size: 20),
+        const SizedBox(height: 6),
         Text(
-          title,
+          value,
           style: const TextStyle(
-            fontSize: 12,
-            color: Colors.grey,
-            fontWeight: FontWeight.w500,
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
           ),
         ),
         const SizedBox(height: 2),
         Text(
-          value,
+          label,
           style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: color,
+            color: Colors.white.withOpacity(0.8),
+            fontSize: 11,
           ),
         ),
       ],
     );
   }
+}
 
-  Widget _buildLabelCard(dynamic noLabel) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 3,
-      child: ExpansionTile(
-        tilePadding: const EdgeInsets.all(16),
-        childrenPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // --- Header: Label & Date ---
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+// ---------------------------------------------------------------------------
+// Kartu lokasi
+// ---------------------------------------------------------------------------
+class _LokasiCard extends StatelessWidget {
+  final Color brown;
+  final LokasiSummaryModel lokasi;
+  final VoidCallback onTap;
+
+  const _LokasiCard({
+    required this.brown,
+    required this.lokasi,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bool terisi = lokasi.jumlahLabel > 0;
+    final Color accent = terisi ? brown : Colors.grey.shade400;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        elevation: 1.5,
+        shadowColor: Colors.black26,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onTap,
+          child: IntrinsicHeight(
+            child: Row(
               children: [
-                Expanded(
-                  child: Text(
-                    noLabel.combinedLabel ?? 'Unknown Label',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                // Aksen warna kiri
+                Container(
+                  width: 5,
+                  decoration: BoxDecoration(
+                    color: accent,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(16),
+                      bottomLeft: Radius.circular(16),
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  noLabel.dateCreate ?? '-',
-                  style: const TextStyle(fontSize: 14, color: Colors.grey),
+                Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Container(
+                    height: 46,
+                    width: 46,
+                    decoration: BoxDecoration(
+                      color: accent.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(Icons.warehouse_rounded, color: accent),
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        lokasi.idLokasi,
+                        style: const TextStyle(
+                          fontSize: 15.5,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        (lokasi.description ?? '').isNotEmpty
+                            ? lokasi.description!
+                            : 'Tanpa keterangan',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: terisi
+                              ? brown.withOpacity(0.12)
+                              : Colors.grey.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.label_rounded,
+                                size: 13,
+                                color: terisi ? brown : Colors.grey),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${lokasi.jumlahLabel}',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                                color: terisi ? brown : Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'label',
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          color: Colors.grey.shade500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: Icon(Icons.chevron_right_rounded,
+                      color: Colors.grey.shade400),
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
-            const SizedBox(height: 8),
-            const Divider(height: 1, color: Colors.grey),
-            const SizedBox(height: 8),
+// ---------------------------------------------------------------------------
+// Placeholder state (error / kosong) yang tetap bisa di-pull-to-refresh
+// ---------------------------------------------------------------------------
+class _StatePlaceholder extends StatelessWidget {
+  final Future<void> Function() onRefresh;
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String subtitle;
 
-            // --- Detail Info Secara Vertikal ---
-            _buildInfoRow(
-              icon: Icons.category,
-              label: noLabel.labelType ?? 'Tidak Ada Tipe',
-              textStyle: const TextStyle(fontSize: 14, color: Colors.grey),
+  const _StatePlaceholder({
+    required this.onRefresh,
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      child: LayoutBuilder(
+        builder: (context, constraints) => SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(icon, size: 56, color: iconColor),
+                    const SizedBox(height: 14),
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      subtitle,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-            const SizedBox(height: 6),
-            _buildInfoRow(
-              icon: Icons.location_on,
-              label: 'Lokasi: ${noLabel.labelLocation ?? "-"}',
-              textStyle: const TextStyle(fontSize: 14, color: Colors.blueAccent),
-            ),
-            if (noLabel.labelM3 != null && noLabel.labelM3.isNotEmpty) ...[
-              const SizedBox(height: 6),
-              _buildInfoRow(
-                icon: Icons.view_in_ar,
-                label: 'M³: ${_formatM3(noLabel.labelM3)}',
-                textStyle: const TextStyle(
-                  fontSize: 14,
-                  color: Colors.orange,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-            if (noLabel.hasDetails) ...[
-              const SizedBox(height: 6),
-              _buildInfoRow(
-                icon: Icons.list_alt,
-                label: '${noLabel.totalBatang} batang (${noLabel.totalDetails} detail)',
-                textStyle: const TextStyle(fontSize: 12, color: Colors.green),
-              ),
-            ],
-          ],
-        ),
-
-        // --- Expanded Detail Content ---
-        children: _buildExpansionChildren(noLabel),
-      ),
-    );
-  }
-
-  Widget _buildInfoRow({
-    required IconData icon,
-    required String label,
-    required TextStyle textStyle,
-  }) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 18, color: textStyle.color),
-        const SizedBox(width: 8),
-        Expanded(child: Text(label, style: textStyle)),
-      ],
-    );
-  }
-
-
-  List<Widget> _buildExpansionChildren(dynamic noLabel) {
-    if (noLabel.hasDetails) {
-      return [
-        const Divider(),
-        _buildTableView(noLabel.details),
-      ];
-    } else {
-      return [
-        const Padding(
-          padding: EdgeInsets.all(16.0),
-          child: Text(
-            'Tidak ada detail tersedia',
-            style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic),
           ),
-        ),
-      ];
-    }
-  }
-
-  Widget _buildTableView(List<dynamic> details) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: DataTable(
-        headingRowColor: MaterialStateProperty.all(Colors.grey[100]),
-        headingTextStyle: const TextStyle(
-          fontWeight: FontWeight.bold,
-          color: Colors.black87,
-          fontSize: 12,
-        ),
-        dataTextStyle: const TextStyle(
-          fontSize: 11,
-          color: Colors.black87,
-        ),
-        columnSpacing: 40,
-        horizontalMargin: 40,
-        columns: const [
-          DataColumn(
-            label: Text('No.'),
-            numeric: true,
-          ),
-          DataColumn(
-            label: Text('Tbl'),
-            numeric: true,
-          ),
-          DataColumn(
-            label: Text('Lbr'),
-            numeric: true,
-          ),
-          DataColumn(
-            label: Text('Pjg'),
-            numeric: true,
-          ),
-          DataColumn(
-            label: Text('Pcs'),
-            numeric: true,
-          ),
-        ],
-        rows: details.map<DataRow>((detail) {
-          return DataRow(
-            cells: [
-              DataCell(
-                Text(
-                  detail.noUrut?.toString() ?? '-',
-                  style: const TextStyle(fontWeight: FontWeight.w500),
-                ),
-              ),
-              DataCell(
-                Text(formatAngka(detail.tebal)),
-              ),
-              DataCell(
-                Text(formatAngka(detail.lebar)),
-              ),
-              DataCell(
-                Text(formatAngka(detail.panjang)),
-              ),
-              DataCell(
-                Text(
-                  detail.jmlhBatang?.toString() ?? '0',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green,
-                  ),
-                ),
-              ),
-            ],
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  String formatAngka(double? value) {
-    if (value == null) return '-';
-
-    // Jika angka adalah bilangan bulat (misal: 7.0), tampilkan tanpa desimal
-    if (value == value.truncateToDouble()) {
-      return value.toStringAsFixed(0);
-    }
-
-    // Jika bukan bilangan bulat, tampilkan 2 angka di belakang koma
-    return value.toStringAsFixed(2);
-  }
-
-  // Helper method untuk format M3 - mempertahankan format asli dari JSON
-  String _formatM3(String? m3Value) {
-    if (m3Value == null || m3Value.isEmpty) return '0.0000';
-
-    final double? value = double.tryParse(m3Value);
-    if (value == null) return '0.0000';
-
-    // Tambahkan thousand separator tanpa mengubah jumlah digit desimal
-    // Pisahkan bagian integer dan desimal
-    String valueStr = m3Value;
-    if (valueStr.contains('.')) {
-      List<String> parts = valueStr.split('.');
-      String integerPart = parts[0];
-      String decimalPart = parts[1];
-
-      // Tambahkan thousand separator ke bagian integer
-      String formattedInteger = integerPart.replaceAllMapped(
-        RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-            (Match match) => '${match[1]},',
-      );
-
-      return '$formattedInteger.$decimalPart';
-    } else {
-      // Jika tidak ada desimal, tambahkan .0000
-      return valueStr.replaceAllMapped(
-        RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-            (Match match) => '${match[1]},',
-      ) + '.0000';
-    }
-  }
-
-  // Helper method untuk format angka dengan thousand separator
-  String _formatNumber(int value) {
-    return value.toString().replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-          (Match match) => '${match[1]},',
-    );
-  }
-
-  Widget _buildFilterDropdown() {
-    return Container(
-      width: 120,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade300),
-      ),
-      child: DropdownButton<String>(
-        value: _selectedFilter,
-        hint: const Text('Filter Label'),
-        isExpanded: true,
-        onChanged: (value) {
-          setState(() {
-            _selectedFilter = value;
-          });
-
-          final viewModel = Provider.of<MappingLokasiViewModel>(context, listen: false);
-          viewModel.fetchData(filterBy: _selectedFilter, idLokasi: _selectedLocation);
-        },
-        items: const [
-          DropdownMenuItem<String>(value: null, child: Text('Semua')),
-          DropdownMenuItem<String>(value: 'st', child: Text('ST')),
-          DropdownMenuItem<String>(value: 's4s', child: Text('S4S')),
-          DropdownMenuItem<String>(value: 'fj', child: Text('FJ')),
-          DropdownMenuItem<String>(value: 'moulding', child: Text('MLD')),
-          DropdownMenuItem<String>(value: 'laminating', child: Text('LMT')),
-          DropdownMenuItem<String>(value: 'ccakhir', child: Text('CCA')),
-          DropdownMenuItem<String>(value: 'sanding', child: Text('SND')),
-          DropdownMenuItem<String>(value: 'bj', child: Text('BJ')),
-        ],
-        underline: const SizedBox.shrink(),
-      ),
-    );
-  }
-
-  Widget _buildLocationDropdown() {
-    return Consumer<LokasiViewModel>(
-      builder: (context, lokasiVM, child) {
-        final mappingVM = Provider.of<MappingLokasiViewModel>(context, listen: false);
-
-        final suggestions = [
-          SearchFieldListItem<String>('Semua'),
-          ...lokasiVM.lokasiList.map(
-                (lokasi) => SearchFieldListItem<String>(lokasi.idLokasi),
-          ),
-        ];
-
-        return Container(
-          width: 140,
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border.all(color: Colors.grey.shade300),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: SearchField<String>(
-            controller: _locationController,
-            hint: 'Lokasi',
-            searchInputDecoration: SearchInputDecoration(border: InputBorder.none),
-            suggestions: suggestions,
-            onSuggestionTap: (selected) {
-              setState(() {
-                _selectedLocation = selected.searchKey;
-                _locationController.text = selected.searchKey;
-              });
-
-              mappingVM.fetchData(
-                filterBy: _selectedFilter,
-                idLokasi: _selectedLocation == 'Semua' ? null : _selectedLocation,
-              );
-            },
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildCountText() {
-    return Consumer<MappingLokasiViewModel>(
-      builder: (context, viewModel, child) {
-        return Text(
-          '${viewModel.totalData} Label',
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
-          ),
-        );
-      },
-    );
-  }
-
-  void _showScanBarQRCode(BuildContext context) {
-    if (_selectedLocation == null || _selectedLocation == 'Semua') {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Harap pilih lokasi terlebih dahulu.')),
-      );
-      return;
-    }
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => BarcodeQrScanMappingScreen(
-          selectedFilter: _selectedFilter ?? 'all',
-          idLokasi: _selectedLocation!,
         ),
       ),
     );
