@@ -13,6 +13,9 @@ class ApiConstants {
       '$baseUrl/api/mapping/lokasi-summary';
   static String mappingLokasiLabels(String idLokasi) =>
       '$baseUrl/api/mapping/lokasi-labels?idlokasi=${Uri.encodeComponent(idLokasi)}';
+
+  // QC Barang Jadi (SPK)
+  static String get qcSpkBj => '$baseUrl/api/qc-spk-bj';
   static String get listNoSO => '$baseUrl/api/no-stock-opname';
   static String get listNyangkut => '$baseUrl/api/nyangkut-list';
   static String get listNoKD => '$baseUrl/api/kd-bongkar';

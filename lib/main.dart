@@ -27,6 +27,7 @@ import 'core/view_models/preview_label_view_model.dart';
 import 'core/view_models/pdf_view_model.dart';
 import 'core/view_models/pdf_view_model_st.dart';
 import 'features/home/view_model/user_profile_view_model.dart';
+import 'features/home/view_model/dashboard_summary_view_model.dart';
 import 'features/mapping/view_model/mapping_lokasi_view_model.dart';
 import 'features/nyangkut/view_model/nyangkut_list_view_model.dart';
 import 'features/nyangkut/view_model/nyangkut_detail_view_model.dart';
@@ -54,6 +55,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => PDFViewModelS4S()),
         ChangeNotifierProvider(create: (_) => PDFViewModelST()),
         ChangeNotifierProvider(create: (_) => UserProfileViewModel()),
+        ChangeNotifierProvider(create: (_) => DashboardSummaryViewModel()),
         ChangeNotifierProvider(create: (_) => MappingLokasiViewModel()),
         ChangeNotifierProvider(create: (_) => QcSpkHeaderViewModel()),
         ChangeNotifierProvider(create: (_) => NyangkutListViewModel()),
