@@ -88,6 +88,46 @@ class _QcSpkBundleScreenState extends State<QcSpkBundleScreen> {
     _openInput(vm, noBundle: _nextBundleNo);
   }
 
+  Future<void> _confirmDelete(QcSpkBundleViewModel vm, QcSpkBundle bundle) async {
+    if (!mounted) return;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Hapus Bundle'),
+        content: Text(
+          'Yakin ingin menghapus bundle #${bundle.noBundle ?? "-"} '
+          'beserta fotonya?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text(
+              'Hapus',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+
+    final deleted = await vm.deleteOne(bundle.noBundle ?? 0);
+    if (!mounted) return;
+    if (deleted) {
+      AppToast.success(context, 'Bundle #${bundle.noBundle} dihapus.');
+      setState(() {
+        _seeded = false;
+        _seed(vm.items);
+      });
+    } else {
+      AppToast.error(context, vm.error.isEmpty ? 'Gagal menghapus bundle' : vm.error);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final line = widget.line;
@@ -208,6 +248,7 @@ class _QcSpkBundleScreenState extends State<QcSpkBundleScreen> {
                                         noBundle: b.noBundle ?? (i + 1),
                                         initial: b,
                                       ),
+                                      onDelete: () => _confirmDelete(vm, b),
                                     );
                                   },
                                 ),
@@ -271,8 +312,13 @@ class _SpecHeader extends StatelessWidget {
 class _BundleCard extends StatelessWidget {
   final QcSpkBundle bundle;
   final VoidCallback onTap;
+  final VoidCallback onDelete;
 
-  const _BundleCard({required this.bundle, required this.onTap});
+  const _BundleCard({
+    required this.bundle,
+    required this.onTap,
+    required this.onDelete,
+  });
 
   String _f(double? n) {
     if (n == null) return '-';
@@ -296,7 +342,7 @@ class _BundleCard extends StatelessWidget {
         border: Border.all(color: Colors.green.shade200),
       ),
       child: ListTile(
-        onTap: onTap,
+        //onTap: onTap,
         contentPadding: const EdgeInsets.fromLTRB(14, 6, 12, 6),
         leading: CircleAvatar(
           backgroundColor: Colors.green.withOpacity(0.12),
@@ -326,7 +372,26 @@ class _BundleCard extends StatelessWidget {
             ],
           ],
         ),
-        trailing: const Icon(Icons.edit_outlined, color: _brand, size: 20),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: Icon(Icons.edit_outlined,
+                color: _brand,
+              ),
+              onPressed: onTap,
+            ),
+            SizedBox(
+              width: 5.0
+            ),
+            IconButton(
+              icon: Icon(Icons.delete_outline,
+                color: _brand,
+              ),
+              onPressed: onDelete,
+            ),
+          ],
+        )
       ),
     );
   }

@@ -227,6 +227,42 @@ class QcSpkBundleViewModel extends ChangeNotifier {
     }
   }
 
+  /// Hapus 1 bundle QC (beserta foto MinIO di server).
+  Future<bool> deleteOne(int noBundle) async {
+    if (_noSPK.isEmpty || _lineNo < 1) {
+      _setError('SPK/baris belum di-set. Panggil load() dulu.');
+      return false;
+    }
+    if (noBundle < 1) {
+      _setError('noBundle tidak valid.');
+      return false;
+    }
+    try {
+      final token = await _getToken();
+      if (token == null) {
+        _setError('Unauthorized: no token');
+        return false;
+      }
+
+      final resp = await http.delete(
+        Uri.parse('$_baseUri/$noBundle'),
+        headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
+      ).timeout(const Duration(seconds: 20));
+
+      if (resp.statusCode == 200 || resp.statusCode == 204) {
+        await _fetch();
+        return true;
+      }
+
+      final body = _safeBodyMap(resp.bodyBytes);
+      _setError(body['message']?.toString() ?? 'Gagal hapus bundle (${resp.statusCode})');
+      return false;
+    } catch (e) {
+      _setError('Gagal hapus bundle: $e');
+      return false;
+    }
+  }
+
   /// Hapus semua bundle QC untuk baris ini.
   Future<bool> deleteAll() async {
     if (_noSPK.isEmpty || _lineNo < 1) {
