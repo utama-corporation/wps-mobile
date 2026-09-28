@@ -138,12 +138,14 @@ class QcSpkBundleViewModel extends ChangeNotifier {
   }
 
   /// Simpan 1 bundle (upsert) + foto opsional — via multipart PUT .../bundles/:noBundle.
+  /// Tiap bidang bisa berisi hingga [QcSpkBundle.maxPhotosPerField] file; nama part
+  /// diulang (fotoTebal, fotoTebal, ...) agar server bisa menambah fotonya.
   Future<bool> saveOne(
     QcSpkBundle bundle, {
-    File? fotoTebal,
-    File? fotoLebar,
-    File? fotoPanjang,
-    File? fotoBundle,
+    List<File> fotoTebal = const [],
+    List<File> fotoLebar = const [],
+    List<File> fotoPanjang = const [],
+    List<File> fotoBundle = const [],
   }) async {
     if (_noSPK.isEmpty || _lineNo < 1) {
       _setError('SPK/baris belum di-set. Panggil load() dulu.');
@@ -169,15 +171,17 @@ class QcSpkBundleViewModel extends ChangeNotifier {
         ..fields['panjang'] = '${bundle.panjang ?? ''}'
         ..fields['jumlahPcs'] = '${bundle.jumlahPcs ?? ''}';
 
-      Future<void> addFile(String field, File? f) async {
-        if (f == null) return;
-        req.files.add(await http.MultipartFile.fromPath(field, f.path));
+      Future<void> addFiles(String field, List<File> files) async {
+        for (final f in files.take(QcSpkBundle.maxPhotosPerField)) {
+          if (f.path.isEmpty) continue;
+          req.files.add(await http.MultipartFile.fromPath(field, f.path));
+        }
       }
 
-      await addFile('fotoTebal', fotoTebal);
-      await addFile('fotoLebar', fotoLebar);
-      await addFile('fotoPanjang', fotoPanjang);
-      await addFile('fotoBundle', fotoBundle);
+      await addFiles('fotoTebal', fotoTebal);
+      await addFiles('fotoLebar', fotoLebar);
+      await addFiles('fotoPanjang', fotoPanjang);
+      await addFiles('fotoBundle', fotoBundle);
 
       final streamed = await req.send().timeout(const Duration(seconds: 60));
       final resp = await http.Response.fromStream(streamed);
@@ -198,7 +202,9 @@ class QcSpkBundleViewModel extends ChangeNotifier {
 
   /// Hapus 1 foto tersimpan dari sebuah bundle.
   /// [field] = fotoTebal | fotoLebar | fotoPanjang | fotoBundle
-  Future<bool> deletePhoto(int noBundle, String field) async {
+  /// [index] = posisi foto pada field tersebut (0-based). Null => hapus seluruh
+  /// foto pada field (endpoint lama, tanpa index).
+  Future<bool> deletePhoto(int noBundle, String field, {int? index}) async {
     if (_noSPK.isEmpty || _lineNo < 1) {
       _setError('SPK/baris belum di-set.');
       return false;
@@ -209,8 +215,9 @@ class QcSpkBundleViewModel extends ChangeNotifier {
         _setError('Unauthorized: no token');
         return false;
       }
+      final suffix = (index == null || index < 0) ? '' : '/$index';
       final resp = await http.delete(
-        Uri.parse('$_baseUri/$noBundle/photos/$field'),
+        Uri.parse('$_baseUri/$noBundle/photos/$field$suffix'),
         headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
       ).timeout(const Duration(seconds: 20));
 

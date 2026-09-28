@@ -41,17 +41,17 @@ class _QcSpkBundleInputScreenState extends State<QcSpkBundleInputScreen> {
   late final TextEditingController _panjang;
   late final TextEditingController _pcs;
 
-  // foto yang baru dipilih (menimpa foto lama saat disimpan)
-  File? _fotoTebal;
-  File? _fotoLebar;
-  File? _fotoPanjang;
-  File? _fotoBundle;
+  // foto yang baru dipilih (menambah/menimpa foto lama saat disimpan)
+  final List<File> _fotoTebal = [];
+  final List<File> _fotoLebar = [];
+  final List<File> _fotoPanjang = [];
+  final List<File> _fotoBundle = [];
 
-  // URL foto tersimpan (bisa berubah null setelah dihapus)
-  String? _urlTebal;
-  String? _urlLebar;
-  String? _urlPanjang;
-  String? _urlBundle;
+  // URL foto tersimpan (bisa berubah setelah dihapus)
+  final List<String> _urlTebal = [];
+  final List<String> _urlLebar = [];
+  final List<String> _urlPanjang = [];
+  final List<String> _urlBundle = [];
 
   bool _saving = false;
   bool _changed =
@@ -63,10 +63,12 @@ class _QcSpkBundleInputScreenState extends State<QcSpkBundleInputScreen> {
     final i = widget.initial;
     final s = widget.spec;
 
-    _urlTebal = i?.fotoTebalUrl;
-    _urlLebar = i?.fotoLebarUrl;
-    _urlPanjang = i?.fotoPanjangUrl;
-    _urlBundle = i?.fotoBundleUrl;
+    if (i != null) {
+      _urlTebal.addAll(i.fotoTebalUrls);
+      _urlLebar.addAll(i.fotoLebarUrls);
+      _urlPanjang.addAll(i.fotoPanjangUrls);
+      _urlBundle.addAll(i.fotoBundleUrls);
+    }
     final filled = i != null &&
         i.tebal != null &&
         i.lebar != null &&
@@ -112,7 +114,18 @@ class _QcSpkBundleInputScreenState extends State<QcSpkBundleInputScreen> {
     return null;
   }
 
-  Future<void> _pickPhoto(void Function(File) onPicked) async {
+  Future<void> _pickPhoto(
+    String label,
+    List<File> newFiles,
+    List<String> savedUrls,
+  ) async {
+    if (_totalPhotos(newFiles, savedUrls) >= QcSpkBundle.maxPhotosPerField) {
+      AppToast.warning(
+        context,
+        '$label sudah penuh (maks ${QcSpkBundle.maxPhotosPerField} foto)',
+      );
+      return;
+    }
     // Wajib ambil real-time dari kamera — galeri tidak diperbolehkan.
     try {
       final x = await _picker.pickImage(
@@ -121,23 +134,37 @@ class _QcSpkBundleInputScreenState extends State<QcSpkBundleInputScreen> {
         imageQuality: 70,
         maxWidth: 1600,
       );
-      if (x != null) setState(() => onPicked(File(x.path)));
+      if (x == null) return;
+      if (!mounted) return;
+      setState(() => newFiles.add(File(x.path)));
     } catch (e) {
       if (mounted) AppToast.error(context, 'Gagal ambil foto: $e');
     }
   }
 
-  /// Hapus foto tersimpan di server (dengan konfirmasi).
+  int _totalPhotos(List<File> newFiles, List<String> savedUrls) =>
+      newFiles.length + savedUrls.length;
+
+  static void _replaceAll(List<String> target, List<String> src) {
+    target
+      ..clear()
+      ..addAll(src);
+  }
+
+  /// Hapus 1 foto tersimpan di server pada [index] (dengan konfirmasi).
   Future<void> _deleteSavedPhoto(
     String field,
     String label,
-    void Function() clearLocalUrl,
+    List<String> savedUrls,
+    int index,
   ) async {
     final yes = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Hapus foto?'),
-        content: Text('$label akan dihapus permanen dari server.'),
+        content: Text(
+          '$label foto ${index + 1} akan dihapus permanen dari server.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -154,16 +181,17 @@ class _QcSpkBundleInputScreenState extends State<QcSpkBundleInputScreen> {
     if (yes != true) return;
 
     setState(() => _saving = true);
-    final ok = await widget.vm.deletePhoto(widget.noBundle, field);
+    final ok =
+        await widget.vm.deletePhoto(widget.noBundle, field, index: index);
     if (!mounted) return;
     setState(() => _saving = false);
 
     if (ok) {
       setState(() {
-        clearLocalUrl();
+        savedUrls.removeAt(index);
         _changed = true;
       });
-      AppToast.success(context, '$label dihapus');
+      AppToast.success(context, '$label foto ${index + 1} dihapus');
     } else {
       AppToast.error(
         context,
@@ -203,14 +231,14 @@ class _QcSpkBundleInputScreenState extends State<QcSpkBundleInputScreen> {
       setState(() {
         _saving = false;
         _changed = true;
-        _urlTebal = saved.fotoTebalUrl;
-        _urlLebar = saved.fotoLebarUrl;
-        _urlPanjang = saved.fotoPanjangUrl;
-        _urlBundle = saved.fotoBundleUrl;
-        _fotoTebal = null;
-        _fotoLebar = null;
-        _fotoPanjang = null;
-        _fotoBundle = null;
+        _replaceAll(_urlTebal, saved.fotoTebalUrls);
+        _replaceAll(_urlLebar, saved.fotoLebarUrls);
+        _replaceAll(_urlPanjang, saved.fotoPanjangUrls);
+        _replaceAll(_urlBundle, saved.fotoBundleUrls);
+        _fotoTebal.clear();
+        _fotoLebar.clear();
+        _fotoPanjang.clear();
+        _fotoBundle.clear();
       });
       AppToast.success(context, 'Bundle #${widget.noBundle} tersimpan');
     } else {
@@ -314,69 +342,17 @@ class _QcSpkBundleInputScreenState extends State<QcSpkBundleInputScreen> {
               const SizedBox(height: 20),
               const Text('Foto QC',
                   style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
-              const SizedBox(height: 8),
-              GridView.count(
-                crossAxisCount: 2,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: 1.15,
-                children: [
-                  _PhotoTile(
-                    label: 'Foto Tebal',
-                    file: _fotoTebal,
-                    networkUrl: _urlTebal,
-                    onPick: () => _pickPhoto((f) => _fotoTebal = f),
-                    onClearNew: _fotoTebal == null
-                        ? null
-                        : () => setState(() => _fotoTebal = null),
-                    onDeleteSaved: (_fotoTebal == null && _urlTebal != null)
-                        ? () => _deleteSavedPhoto(
-                            'fotoTebal', 'Foto Tebal', () => _urlTebal = null)
-                        : null,
-                  ),
-                  _PhotoTile(
-                    label: 'Foto Lebar',
-                    file: _fotoLebar,
-                    networkUrl: _urlLebar,
-                    onPick: () => _pickPhoto((f) => _fotoLebar = f),
-                    onClearNew: _fotoLebar == null
-                        ? null
-                        : () => setState(() => _fotoLebar = null),
-                    onDeleteSaved: (_fotoLebar == null && _urlLebar != null)
-                        ? () => _deleteSavedPhoto(
-                            'fotoLebar', 'Foto Lebar', () => _urlLebar = null)
-                        : null,
-                  ),
-                  _PhotoTile(
-                    label: 'Foto Panjang',
-                    file: _fotoPanjang,
-                    networkUrl: _urlPanjang,
-                    onPick: () => _pickPhoto((f) => _fotoPanjang = f),
-                    onClearNew: _fotoPanjang == null
-                        ? null
-                        : () => setState(() => _fotoPanjang = null),
-                    onDeleteSaved: (_fotoPanjang == null && _urlPanjang != null)
-                        ? () => _deleteSavedPhoto('fotoPanjang', 'Foto Panjang',
-                            () => _urlPanjang = null)
-                        : null,
-                  ),
-                  _PhotoTile(
-                    label: 'Foto Bundle',
-                    file: _fotoBundle,
-                    networkUrl: _urlBundle,
-                    onPick: () => _pickPhoto((f) => _fotoBundle = f),
-                    onClearNew: _fotoBundle == null
-                        ? null
-                        : () => setState(() => _fotoBundle = null),
-                    onDeleteSaved: (_fotoBundle == null && _urlBundle != null)
-                        ? () => _deleteSavedPhoto('fotoBundle', 'Foto Bundle',
-                            () => _urlBundle = null)
-                        : null,
-                  ),
-                ],
+              Text(
+                'Maksimal ${QcSpkBundle.maxPhotosPerField} foto per bidang.',
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
               ),
+              const SizedBox(height: 8),
+              _photoSection('Foto Tebal', 'fotoTebal', _fotoTebal, _urlTebal),
+              _photoSection('Foto Lebar', 'fotoLebar', _fotoLebar, _urlLebar),
+              _photoSection(
+                  'Foto Panjang', 'fotoPanjang', _fotoPanjang, _urlPanjang),
+              _photoSection(
+                  'Foto Bundle', 'fotoBundle', _fotoBundle, _urlBundle),
             ],
           ),
         ),
@@ -408,6 +384,79 @@ class _QcSpkBundleInputScreenState extends State<QcSpkBundleInputScreen> {
     );
   }
 
+  /// Satu bidang foto: judul + jumlah terisi + [QcSpkBundle.maxPhotosPerField] slot.
+  /// Foto tersimpan selalu tampil lebih dulu, foto baru menyusul di slot berikutnya.
+  Widget _photoSection(
+    String label,
+    String field,
+    List<File> newFiles,
+    List<String> savedUrls,
+  ) {
+    final max = QcSpkBundle.maxPhotosPerField;
+    final savedCount = savedUrls.length;
+    final total = _totalPhotos(newFiles, savedUrls);
+
+    final tiles = <Widget>[];
+    for (var i = 0; i < max; i++) {
+      final isSaved = i < savedCount;
+      final newIdx = i - savedCount;
+      tiles.add(Expanded(
+        child: AspectRatio(
+          aspectRatio: 1,
+          child: _PhotoTile(
+            label: label,
+            index: i + 1,
+            file: isSaved || newIdx < 0 || newIdx >= newFiles.length
+                ? null
+                : newFiles[newIdx],
+            networkUrl: isSaved ? savedUrls[i] : null,
+            onPick: () => _pickPhoto(label, newFiles, savedUrls),
+            onClearNew: (!isSaved && newIdx >= 0 && newIdx < newFiles.length)
+                ? () => setState(() => newFiles.removeAt(newIdx))
+                : null,
+            onDeleteSaved: isSaved
+                ? () => _deleteSavedPhoto(field, label, savedUrls, i)
+                : null,
+          ),
+        ),
+      ));
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(label,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w600, fontSize: 13)),
+            ),
+            Text(
+              '$total / $max',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: total >= max ? _brand : Colors.grey.shade600,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            tiles[0],
+            const SizedBox(width: 8),
+            tiles[1],
+            const SizedBox(width: 8),
+            tiles[2],
+          ],
+        ),
+        const SizedBox(height: 14),
+      ],
+    );
+  }
+
   InputDecoration _deco(String label) => InputDecoration(
         labelText: label,
         filled: true,
@@ -431,6 +480,7 @@ class _QcSpkBundleInputScreenState extends State<QcSpkBundleInputScreen> {
 
 class _PhotoTile extends StatelessWidget {
   final String label;
+  final int index; // nomor slot (1..max)
   final File? file;
   final String? networkUrl;
   final VoidCallback onPick;
@@ -439,6 +489,7 @@ class _PhotoTile extends StatelessWidget {
 
   const _PhotoTile({
     required this.label,
+    required this.index,
     required this.file,
     required this.networkUrl,
     required this.onPick,
@@ -501,8 +552,24 @@ class _PhotoTile extends StatelessWidget {
           fit: StackFit.expand,
           children: [
             if (hasImage) image,
-            // Sudah ada foto: hanya tombol HAPUS. Untuk ganti foto:
-            // hapus dulu, lalu ambil ulang dari tile kosong.
+            // Nomor slot di kiri atas, tombol hapus di kanan atas.
+            if (hasImage)
+              Positioned(
+                top: 4,
+                left: 4,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '$index',
+                    style: const TextStyle(color: Colors.white, fontSize: 10),
+                  ),
+                ),
+              ),
             if (hasImage && removeAction != null)
               Positioned(
                 top: 4,
@@ -515,48 +582,32 @@ class _PhotoTile extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(Icons.photo_camera_outlined,
-                      color: Colors.grey.shade500, size: 26),
-                  const SizedBox(height: 6),
-                  Text(label,
+                      color: Colors.grey.shade500, size: 24),
+                  const SizedBox(height: 4),
+                  Text('Kamera',
                       style:
-                          TextStyle(color: Colors.grey.shade600, fontSize: 12)),
-                  const SizedBox(height: 2),
-                  Text('Ambil dari kamera',
-                      style:
-                          TextStyle(color: Colors.grey.shade400, fontSize: 10)),
+                          TextStyle(color: Colors.grey.shade600, fontSize: 11)),
                 ],
               ),
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: Container(
-                color: Colors.black.withOpacity(0.45),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        label,
-                        style:
-                            const TextStyle(color: Colors.white, fontSize: 11),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    if (file != null)
-                      const Padding(
-                        padding: EdgeInsets.only(left: 4),
-                        child: Text('BARU',
-                            style: TextStyle(
-                                color: Colors.amberAccent,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold)),
-                      ),
-                  ],
+            if (file != null)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  color: Colors.amber.shade700,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  alignment: Alignment.center,
+                  child: const Text(
+                    'BARU',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
-            ),
           ],
         ),
       ),

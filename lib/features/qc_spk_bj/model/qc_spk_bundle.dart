@@ -2,15 +2,18 @@
 import '../../../constants/api_constants.dart';
 
 class QcSpkBundle {
+  /// Maksimal foto per bidang (tebal/lebar/panjang/bundle).
+  static const int maxPhotosPerField = 3;
+
   final int? noBundle;
   final double? tebal;
   final double? lebar;
   final double? panjang;
   final int? jumlahPcs;
-  final String? fotoTebalUrl;
-  final String? fotoLebarUrl;
-  final String? fotoPanjangUrl;
-  final String? fotoBundleUrl;
+  final List<String> fotoTebalUrls;
+  final List<String> fotoLebarUrls;
+  final List<String> fotoPanjangUrls;
+  final List<String> fotoBundleUrls;
 
   QcSpkBundle({
     this.noBundle,
@@ -18,10 +21,10 @@ class QcSpkBundle {
     this.lebar,
     this.panjang,
     this.jumlahPcs,
-    this.fotoTebalUrl,
-    this.fotoLebarUrl,
-    this.fotoPanjangUrl,
-    this.fotoBundleUrl,
+    this.fotoTebalUrls = const [],
+    this.fotoLebarUrls = const [],
+    this.fotoPanjangUrls = const [],
+    this.fotoBundleUrls = const [],
   });
 
   static double? _toD(dynamic v) {
@@ -50,16 +53,38 @@ class QcSpkBundle {
     return s.startsWith('/') ? '$base$s' : '$base/$s';
   }
 
+  /// Daftar URL absolut dari array, dibatasi [limit] elemen.
+  static List<String> _photoUrlList(dynamic v,
+      {int limit = maxPhotosPerField}) {
+    if (v is! List) return const [];
+    final out = <String>[];
+    for (final e in v) {
+      if (out.length >= limit) break;
+      final u = _photoUrl(e);
+      if (u != null) out.add(u);
+    }
+    return out;
+  }
+
+  /// Baca foto sebuah bidang: utamakan array (`fotoTebalUrls`), fallback ke
+  /// scalar lama (`fotoTebalUrl`) agar data sebelum upgrade tetap tampil.
+  static List<String> _photos(Map<String, dynamic> j, String field) {
+    final list = _photoUrlList(j['${field}sUrl']);
+    if (list.isNotEmpty) return list;
+    final single = _photoUrl(j['${field}Url']);
+    return single == null ? const [] : [single];
+  }
+
   factory QcSpkBundle.fromJson(Map<String, dynamic> j) => QcSpkBundle(
         noBundle: _toI(j['noBundle']),
         tebal: _toD(j['tebal']),
         lebar: _toD(j['lebar']),
         panjang: _toD(j['panjang']),
         jumlahPcs: _toI(j['jumlahPcs']),
-        fotoTebalUrl: _photoUrl(j['fotoTebalUrl']),
-        fotoLebarUrl: _photoUrl(j['fotoLebarUrl']),
-        fotoPanjangUrl: _photoUrl(j['fotoPanjangUrl']),
-        fotoBundleUrl: _photoUrl(j['fotoBundleUrl']),
+        fotoTebalUrls: _photos(j, 'fotoTebal'),
+        fotoLebarUrls: _photos(j, 'fotoLebar'),
+        fotoPanjangUrls: _photos(j, 'fotoPanjang'),
+        fotoBundleUrls: _photos(j, 'fotoBundle'),
       );
 
   QcSpkBundle copyWith({
@@ -68,10 +93,10 @@ class QcSpkBundle {
     double? lebar,
     double? panjang,
     int? jumlahPcs,
-    String? fotoTebalUrl,
-    String? fotoLebarUrl,
-    String? fotoPanjangUrl,
-    String? fotoBundleUrl,
+    List<String>? fotoTebalUrls,
+    List<String>? fotoLebarUrls,
+    List<String>? fotoPanjangUrls,
+    List<String>? fotoBundleUrls,
   }) {
     return QcSpkBundle(
       noBundle: noBundle ?? this.noBundle,
@@ -79,18 +104,24 @@ class QcSpkBundle {
       lebar: lebar ?? this.lebar,
       panjang: panjang ?? this.panjang,
       jumlahPcs: jumlahPcs ?? this.jumlahPcs,
-      fotoTebalUrl: fotoTebalUrl ?? this.fotoTebalUrl,
-      fotoLebarUrl: fotoLebarUrl ?? this.fotoLebarUrl,
-      fotoPanjangUrl: fotoPanjangUrl ?? this.fotoPanjangUrl,
-      fotoBundleUrl: fotoBundleUrl ?? this.fotoBundleUrl,
+      fotoTebalUrls: fotoTebalUrls ?? this.fotoTebalUrls,
+      fotoLebarUrls: fotoLebarUrls ?? this.fotoLebarUrls,
+      fotoPanjangUrls: fotoPanjangUrls ?? this.fotoPanjangUrls,
+      fotoBundleUrls: fotoBundleUrls ?? this.fotoBundleUrls,
     );
   }
 
-  bool get hasAnyPhoto =>
-      fotoTebalUrl != null ||
-      fotoLebarUrl != null ||
-      fotoPanjangUrl != null ||
-      fotoBundleUrl != null;
+  List<List<String>> get allPhotoUrls => [
+        fotoTebalUrls,
+        fotoLebarUrls,
+        fotoPanjangUrls,
+        fotoBundleUrls,
+      ];
+
+  bool get hasAnyPhoto => allPhotoUrls.any((e) => e.isNotEmpty);
+
+  /// Total foto tersimpan pada semua bidang.
+  int get photoCount => allPhotoUrls.fold(0, (sum, e) => sum + e.length);
 
   Map<String, dynamic> toPostMap() => {
         'noBundle': noBundle,

@@ -325,12 +325,7 @@ class _BundleCard extends StatelessWidget {
     return n % 1 == 0 ? n.toStringAsFixed(0) : n.toString();
   }
 
-  int _photoCount(QcSpkBundle b) => [
-        b.fotoTebalUrl,
-        b.fotoLebarUrl,
-        b.fotoPanjangUrl,
-        b.fotoBundleUrl,
-      ].where((e) => e != null).length;
+  int _photoCount(QcSpkBundle b) => b.photoCount;
 
   @override
   Widget build(BuildContext context) {
