@@ -12,6 +12,7 @@ import 'package:wps_mobile/features/qc_sawmill/view/qc_sawmill_header_screen.dar
 import 'package:wps_mobile/features/qc_sawmill/view_model/qc_sawmill_header_view_model.dart';
 import 'core/auth/token_provider.dart';
 import 'core/network/api_client.dart';
+import 'core/network/network_mode_config.dart';
 import 'features/login/view/login_screen.dart';
 import 'features/mesin_sawmill/repository/mesin_sawmill_repository.dart';
 import 'features/mesin_sawmill/view_model/mesin_sawmill_view_model.dart';
@@ -36,7 +37,9 @@ import 'core/view_models/lokasi_view_model.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
+  await NetworkModeConfig.initialize();
   runApp(MyApp());
 }
 

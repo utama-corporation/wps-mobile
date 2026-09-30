@@ -2,6 +2,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/widgets/app_toast.dart';
@@ -53,6 +54,19 @@ class _QcSpkBundleInputScreenState extends State<QcSpkBundleInputScreen> {
   final List<String> _urlPanjang = [];
   final List<String> _urlBundle = [];
 
+  // Nomor kolom DB tiap foto yang tampil (urutan: foto tersimpan lalu foto
+  // baru). Dipakai agar keterangan dikirim ke kolom yang benar.
+  final List<int> _slotTebal = [];
+  final List<int> _slotLebar = [];
+  final List<int> _slotPanjang = [];
+  final List<int> _slotBundle = [];
+
+  // caption/keterangan per slot foto (satu per foto, sejajar urutan slot).
+  late final List<TextEditingController> _ketTebal;
+  late final List<TextEditingController> _ketLebar;
+  late final List<TextEditingController> _ketPanjang;
+  late final List<TextEditingController> _ketBundle;
+
   bool _saving = false;
   bool _changed =
       false; // ada perubahan tersimpan -> beri tahu layar daftar saat kembali
@@ -68,6 +82,10 @@ class _QcSpkBundleInputScreenState extends State<QcSpkBundleInputScreen> {
       _urlLebar.addAll(i.fotoLebarUrls);
       _urlPanjang.addAll(i.fotoPanjangUrls);
       _urlBundle.addAll(i.fotoBundleUrls);
+      _slotTebal.addAll(i.fotoTebalSlots);
+      _slotLebar.addAll(i.fotoLebarSlots);
+      _slotPanjang.addAll(i.fotoPanjangSlots);
+      _slotBundle.addAll(i.fotoBundleSlots);
     }
     final filled = i != null &&
         i.tebal != null &&
@@ -86,6 +104,16 @@ class _QcSpkBundleInputScreenState extends State<QcSpkBundleInputScreen> {
           ? i.jumlahPcs.toString()
           : (s.pcsPerBundle > 0 ? s.pcsPerBundle.toString() : ''),
     );
+
+    final n = QcSpkBundle.maxPhotosPerField;
+    _ketTebal = _buildCaptions(i?.fotoTebalCaptions, n, fallback: '0');
+    _ketLebar = _buildCaptions(i?.fotoLebarCaptions, n, fallback: '0');
+    _ketPanjang = _buildCaptions(i?.fotoPanjangCaptions, n, fallback: '0');
+    _ketBundle = _buildCaptions(
+      i?.fotoBundleCaptions,
+      QcSpkBundle.maxBundlePhotos,
+      fallback: '0',
+    );
   }
 
   @override
@@ -94,8 +122,36 @@ class _QcSpkBundleInputScreenState extends State<QcSpkBundleInputScreen> {
     _lebar.dispose();
     _panjang.dispose();
     _pcs.dispose();
+    for (final c in _ketTebal) {
+      c.dispose();
+    }
+    for (final c in _ketLebar) {
+      c.dispose();
+    }
+    for (final c in _ketPanjang) {
+      c.dispose();
+    }
+    for (final c in _ketBundle) {
+      c.dispose();
+    }
     super.dispose();
   }
+
+  /// [n] controller nilai; diisi dari hasil ukur yang sudah tersimpan, dan
+  /// memakai [fallback] bila slot foto itu belum punya nilai.
+  static List<TextEditingController> _buildCaptions(
+    List<String>? src,
+    int n, {
+    String fallback = '',
+  }) =>
+      List.generate(
+        n,
+        (k) => TextEditingController(
+          text: (src != null && k < src.length && src[k].trim().isNotEmpty)
+              ? src[k]
+              : fallback,
+        ),
+      );
 
   String _numOrEmpty(double? n) =>
       n == null ? '' : (n % 1 == 0 ? n.toStringAsFixed(0) : n.toString());
@@ -118,12 +174,11 @@ class _QcSpkBundleInputScreenState extends State<QcSpkBundleInputScreen> {
     String label,
     List<File> newFiles,
     List<String> savedUrls,
+    List<int> slots,
+    int max,
   ) async {
-    if (_totalPhotos(newFiles, savedUrls) >= QcSpkBundle.maxPhotosPerField) {
-      AppToast.warning(
-        context,
-        '$label sudah penuh (maks ${QcSpkBundle.maxPhotosPerField} foto)',
-      );
+    if (_totalPhotos(newFiles, savedUrls) >= max) {
+      AppToast.warning(context, '$label sudah penuh (maks $max foto)');
       return;
     }
     // Wajib ambil real-time dari kamera — galeri tidak diperbolehkan.
@@ -136,19 +191,86 @@ class _QcSpkBundleInputScreenState extends State<QcSpkBundleInputScreen> {
       );
       if (x == null) return;
       if (!mounted) return;
-      setState(() => newFiles.add(File(x.path)));
+      setState(() {
+        newFiles.add(File(x.path));
+        // server akan menaruh foto baru di kolom kosong pertama
+        slots.add(_nextFreeSlot(slots, max));
+      });
     } catch (e) {
       if (mounted) AppToast.error(context, 'Gagal ambil foto: $e');
     }
   }
 
+  /// Kolom kosong pertama pada [used]; -1 bila sudah penuh.
+  static int _nextFreeSlot(List<int> used, int max) {
+    for (var s = 0; s < max; s++) {
+      if (!used.contains(s)) return s;
+    }
+    return -1;
+  }
+
+  /// Keterangan diurutkan per KOLOM DB, bukan per posisi tampilan, supaya
+  /// tetap menempel pada foto yang benar setelah ada foto tengah dihapus.
+  static List<String> _captionsByColumn(
+    List<int> slots,
+    List<TextEditingController> caps,
+    int max,
+  ) {
+    final out = List<String>.filled(max, '');
+    for (var p = 0; p < slots.length && p < caps.length; p++) {
+      final s = slots[p];
+      if (s >= 0 && s < max) out[s] = caps[p].text.trim();
+    }
+    return out;
+  }
+
   int _totalPhotos(List<File> newFiles, List<String> savedUrls) =>
       newFiles.length + savedUrls.length;
 
-  static void _replaceAll(List<String> target, List<String> src) {
+  /// Hanya angka dengan maksimal satu pemisah desimal (`,` dinormalkan ke `.`).
+  static final _digitsOnly = TextInputFormatter.withFunction((old, next) {
+    final cleaned = next.text.replaceAll(',', '.').replaceAll(
+          RegExp(r'[^0-9.]'),
+          '',
+        );
+    final parts = cleaned.split('.');
+    final out = parts.length > 1
+        ? '${parts.first}.${parts.sublist(1).join()}'
+        : cleaned;
+    return TextEditingValue(
+      text: out,
+      selection: TextSelection.collapsed(offset: out.length),
+    );
+  });
+
+  static void _replaceAll<T>(List<T> target, List<T> src) {
     target
       ..clear()
       ..addAll(src);
+  }
+
+  static void _replaceCaps(
+    List<TextEditingController> target,
+    List<String> src, {
+    String fallback = '',
+  }) {
+    for (var i = 0; i < target.length; i++) {
+      final v = i < src.length ? src[i] : '';
+      target[i].text = v.trim().isEmpty ? fallback : v;
+    }
+  }
+
+  /// Setelah foto pada posisi [from] dihapus, semua foto berikutnya maju satu
+  /// slot — jadi teks keterangan ikut naik agar tetap menempel pada fotonya.
+  static void _shiftCapsDown(
+    List<TextEditingController> caps,
+    int from,
+    String fallback,
+  ) {
+    for (var k = from; k < caps.length - 1; k++) {
+      caps[k].text = caps[k + 1].text;
+    }
+    if (caps.isNotEmpty) caps.last.text = fallback;
   }
 
   /// Hapus 1 foto tersimpan di server pada [index] (dengan konfirmasi).
@@ -156,7 +278,10 @@ class _QcSpkBundleInputScreenState extends State<QcSpkBundleInputScreen> {
     String field,
     String label,
     List<String> savedUrls,
+    List<int> slots,
     int index,
+    List<TextEditingController> captions,
+    String fallback,
   ) async {
     final yes = await showDialog<bool>(
       context: context,
@@ -189,6 +314,8 @@ class _QcSpkBundleInputScreenState extends State<QcSpkBundleInputScreen> {
     if (ok) {
       setState(() {
         savedUrls.removeAt(index);
+        if (index < slots.length) slots.removeAt(index);
+        _shiftCapsDown(captions, index, fallback);
         _changed = true;
       });
       AppToast.success(context, '$label foto ${index + 1} dihapus');
@@ -219,6 +346,16 @@ class _QcSpkBundleInputScreenState extends State<QcSpkBundleInputScreen> {
       fotoLebar: _fotoLebar,
       fotoPanjang: _fotoPanjang,
       fotoBundle: _fotoBundle,
+      captions: {
+        'fotoTebal': _captionsByColumn(
+            _slotTebal, _ketTebal, QcSpkBundle.maxPhotosPerField),
+        'fotoLebar': _captionsByColumn(
+            _slotLebar, _ketLebar, QcSpkBundle.maxPhotosPerField),
+        'fotoPanjang': _captionsByColumn(
+            _slotPanjang, _ketPanjang, QcSpkBundle.maxPhotosPerField),
+        'fotoBundle': _captionsByColumn(
+            _slotBundle, _ketBundle, QcSpkBundle.maxBundlePhotos),
+      },
     );
     if (!mounted) return;
 
@@ -235,6 +372,15 @@ class _QcSpkBundleInputScreenState extends State<QcSpkBundleInputScreen> {
         _replaceAll(_urlLebar, saved.fotoLebarUrls);
         _replaceAll(_urlPanjang, saved.fotoPanjangUrls);
         _replaceAll(_urlBundle, saved.fotoBundleUrls);
+        _replaceAll(_slotTebal, saved.fotoTebalSlots);
+        _replaceAll(_slotLebar, saved.fotoLebarSlots);
+        _replaceAll(_slotPanjang, saved.fotoPanjangSlots);
+        _replaceAll(_slotBundle, saved.fotoBundleSlots);
+        _replaceCaps(_ketTebal, saved.fotoTebalCaptions, fallback: '0');
+        _replaceCaps(_ketLebar, saved.fotoLebarCaptions, fallback: '0');
+        _replaceCaps(
+            _ketPanjang, saved.fotoPanjangCaptions, fallback: '0');
+        _replaceCaps(_ketBundle, saved.fotoBundleCaptions, fallback: '0');
         _fotoTebal.clear();
         _fotoLebar.clear();
         _fotoPanjang.clear();
@@ -343,16 +489,53 @@ class _QcSpkBundleInputScreenState extends State<QcSpkBundleInputScreen> {
               const Text('Foto QC',
                   style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
               Text(
-                'Maksimal ${QcSpkBundle.maxPhotosPerField} foto per bidang.',
+                'Maksimal ${QcSpkBundle.maxPhotosPerField} foto untuk '
+                'tebal/lebar/panjang dan ${QcSpkBundle.maxBundlePhotos} foto '
+                'untuk bundle.\nIsi angka hasil ukur pada kolom di bawah '
+                'setiap foto.',
                 style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
               ),
               const SizedBox(height: 8),
-              _photoSection('Foto Tebal', 'fotoTebal', _fotoTebal, _urlTebal),
-              _photoSection('Foto Lebar', 'fotoLebar', _fotoLebar, _urlLebar),
               _photoSection(
-                  'Foto Panjang', 'fotoPanjang', _fotoPanjang, _urlPanjang),
+                'Foto Tebal',
+                'fotoTebal',
+                _fotoTebal,
+                _urlTebal,
+                _slotTebal,
+                _ketTebal,
+                max: QcSpkBundle.maxPhotosPerField,
+                valueHint: 'Tebal (mm)',
+              ),
               _photoSection(
-                  'Foto Bundle', 'fotoBundle', _fotoBundle, _urlBundle),
+                'Foto Lebar',
+                'fotoLebar',
+                _fotoLebar,
+                _urlLebar,
+                _slotLebar,
+                _ketLebar,
+                max: QcSpkBundle.maxPhotosPerField,
+                valueHint: 'Lebar (mm)',
+              ),
+              _photoSection(
+                'Foto Panjang',
+                'fotoPanjang',
+                _fotoPanjang,
+                _urlPanjang,
+                _slotPanjang,
+                _ketPanjang,
+                max: QcSpkBundle.maxPhotosPerField,
+                valueHint: 'Panjang (mm)',
+              ),
+              _photoSection(
+                'Foto Bundle',
+                'fotoBundle',
+                _fotoBundle,
+                _urlBundle,
+                _slotBundle,
+                _ketBundle,
+                max: QcSpkBundle.maxBundlePhotos,
+                valueHint: 'Pcs',
+              ),
             ],
           ),
         ),
@@ -384,40 +567,89 @@ class _QcSpkBundleInputScreenState extends State<QcSpkBundleInputScreen> {
     );
   }
 
-  /// Satu bidang foto: judul + jumlah terisi + [QcSpkBundle.maxPhotosPerField] slot.
+  /// Satu bidang foto: judul + jumlah terisi + [max] slot.
   /// Foto tersimpan selalu tampil lebih dulu, foto baru menyusul di slot berikutnya.
+  /// Bila [valueHint] diisi, setiap foto yang terisi punya satu kolom angka
+  /// (hasil ukur) di bawahnya. [captions] = controller per slot.
   Widget _photoSection(
     String label,
     String field,
     List<File> newFiles,
     List<String> savedUrls,
-  ) {
-    final max = QcSpkBundle.maxPhotosPerField;
+    List<int> slots,
+    List<TextEditingController> captions, {
+    required int max,
+    String valueHint = '',
+    String fallback = '0',
+  }) {
     final savedCount = savedUrls.length;
     final total = _totalPhotos(newFiles, savedUrls);
+    final showValue = valueHint.isNotEmpty;
 
-    final tiles = <Widget>[];
+    final columns = <Widget>[];
     for (var i = 0; i < max; i++) {
       final isSaved = i < savedCount;
       final newIdx = i - savedCount;
-      tiles.add(Expanded(
-        child: AspectRatio(
-          aspectRatio: 1,
-          child: _PhotoTile(
-            label: label,
-            index: i + 1,
-            file: isSaved || newIdx < 0 || newIdx >= newFiles.length
-                ? null
-                : newFiles[newIdx],
-            networkUrl: isSaved ? savedUrls[i] : null,
-            onPick: () => _pickPhoto(label, newFiles, savedUrls),
-            onClearNew: (!isSaved && newIdx >= 0 && newIdx < newFiles.length)
-                ? () => setState(() => newFiles.removeAt(newIdx))
-                : null,
-            onDeleteSaved: isSaved
-                ? () => _deleteSavedPhoto(field, label, savedUrls, i)
-                : null,
-          ),
+      final filled = isSaved || (newIdx >= 0 && newIdx < newFiles.length);
+
+      columns.add(Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            AspectRatio(
+              aspectRatio: 1,
+              child: _PhotoTile(
+                label: label,
+                index: i + 1,
+                file: filled && !isSaved ? newFiles[newIdx] : null,
+                networkUrl: isSaved ? savedUrls[i] : null,
+                onPick: () =>
+                    _pickPhoto(label, newFiles, savedUrls, slots, max),
+                onClearNew: filled && !isSaved
+                    ? () => setState(() {
+                          newFiles.removeAt(newIdx);
+                          if (i < slots.length) slots.removeAt(i);
+                          _shiftCapsDown(captions, i, fallback);
+                        })
+                    : null,
+                onDeleteSaved: isSaved
+                    ? () => _deleteSavedPhoto(field, label, savedUrls, slots, i,
+                        captions, fallback)
+                    : null,
+              ),
+            ),
+            if (filled && showValue) ...[
+              const SizedBox(height: 6),
+              TextFormField(
+                controller: captions[i],
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                textAlign: TextAlign.center,
+                inputFormatters: [_digitsOnly],
+                decoration: InputDecoration(
+                  hintText: valueHint,
+                  isDense: true,
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  focusedBorder: const OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(8)),
+                    borderSide: BorderSide(color: _brand, width: 1.4),
+                  ),
+                ),
+                style: const TextStyle(fontSize: 12),
+              ),
+            ],
+          ],
         ),
       ));
     }
@@ -445,11 +677,10 @@ class _QcSpkBundleInputScreenState extends State<QcSpkBundleInputScreen> {
         const SizedBox(height: 6),
         Row(
           children: [
-            tiles[0],
-            const SizedBox(width: 8),
-            tiles[1],
-            const SizedBox(width: 8),
-            tiles[2],
+            for (var i = 0; i < columns.length; i++) ...[
+              if (i > 0) const SizedBox(width: 8),
+              columns[i],
+            ],
           ],
         ),
         const SizedBox(height: 14),

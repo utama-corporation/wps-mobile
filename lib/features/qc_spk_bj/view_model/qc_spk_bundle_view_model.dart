@@ -140,12 +140,14 @@ class QcSpkBundleViewModel extends ChangeNotifier {
   /// Simpan 1 bundle (upsert) + foto opsional — via multipart PUT .../bundles/:noBundle.
   /// Tiap bidang bisa berisi hingga [QcSpkBundle.maxPhotosPerField] file; nama part
   /// diulang (fotoTebal, fotoTebal, ...) agar server bisa menambah fotonya.
+  /// Caption/keterangan dikirim per slot sebagai `ket_<field>_<i>` (i = 0..2).
   Future<bool> saveOne(
     QcSpkBundle bundle, {
     List<File> fotoTebal = const [],
     List<File> fotoLebar = const [],
     List<File> fotoPanjang = const [],
     List<File> fotoBundle = const [],
+    Map<String, List<String>> captions = const {},
   }) async {
     if (_noSPK.isEmpty || _lineNo < 1) {
       _setError('SPK/baris belum di-set. Panggil load() dulu.');
@@ -171,8 +173,15 @@ class QcSpkBundleViewModel extends ChangeNotifier {
         ..fields['panjang'] = '${bundle.panjang ?? ''}'
         ..fields['jumlahPcs'] = '${bundle.jumlahPcs ?? ''}';
 
+      for (final e in captions.entries) {
+        for (var i = 0; i < QcSpkBundle.maxPhotosPerField; i++) {
+          final v = i < e.value.length ? e.value[i] : '';
+          req.fields['ket_${e.key}_$i'] = v;
+        }
+      }
+
       Future<void> addFiles(String field, List<File> files) async {
-        for (final f in files.take(QcSpkBundle.maxPhotosPerField)) {
+        for (final f in files.take(QcSpkBundle.maxPhotosForField(field))) {
           if (f.path.isEmpty) continue;
           req.files.add(await http.MultipartFile.fromPath(field, f.path));
         }

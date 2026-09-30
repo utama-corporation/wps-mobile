@@ -101,15 +101,24 @@ class QcSpkHeaderViewModel extends ChangeNotifier {
       } else if (resp.statusCode == 401) {
         _error = 'Unauthorized: Token invalid/expired';
       } else {
-        final Map<String, dynamic>? body =
-            resp.body.isNotEmpty ? jsonDecode(resp.body) : null;
-        _error = body?['message']?.toString() ??
-            'Server error (${resp.statusCode})';
+        String? serverMessage;
+        final raw = resp.body.trim();
+        if (raw.isNotEmpty) {
+          try {
+            final decoded = jsonDecode(raw);
+            if (decoded is Map<String, dynamic>) {
+              serverMessage = decoded['message']?.toString();
+            }
+          } catch (_) {}
+        }
+        _error = serverMessage ?? 'Server error (${resp.statusCode})';
       }
     } on TypeError catch (e) {
       _error = 'Parsing error: $e';
     } on FormatException catch (e) {
-      _error = 'Format JSON tidak valid: ${e.message}';
+      _error =
+          'Server mengembalikan data bukan JSON (mungkin halaman HTML/404). '
+          'Periksa koneksi/mode jaringan. Detail: ${e.message}';
     } catch (e) {
       _error = 'Koneksi/unknown error: $e';
     } finally {

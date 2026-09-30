@@ -1,7 +1,15 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
+import '../core/network/network_mode_config.dart';
+
 class ApiConstants {
-  static String get baseUrl => dotenv.env['API_BASE_URL'] ?? '';
+  /// Ikuti mode jaringan (Internal/Public/Auto) yang dipilih user.
+  /// Fallback ke [API_BASE_URL] lama jika mode belum menghasilkan URL.
+  static String get baseUrl {
+    final modeUrl = NetworkModeConfig.apiBaseUrl;
+    if (modeUrl.isNotEmpty) return modeUrl;
+    return dotenv.env['API_BASE_URL'] ?? '';
+  }
 
   static String get changePassword => '$baseUrl/api/change-password';
   static String get login => '$baseUrl/api/auth/login2';
