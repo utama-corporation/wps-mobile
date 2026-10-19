@@ -22,6 +22,7 @@ import 'features/qc_spk_bj/view/qc_spk_header_screen.dart';
 import 'features/qc_spk_bj/view_model/qc_spk_header_view_model.dart';
 import 'features/nyangkut/view/nyangkut_menu_screen.dart';
 import 'features/home/view/home_screen.dart';
+import 'features/proses_produksi/view/proses_produksi_menu_screen.dart';
 import 'features/stock_opname/view_model/stock_opname_list_view_model.dart';
 import 'features/stock_opname/view_model/stock_opname_detail_view_model.dart';
 import 'core/view_models/preview_label_view_model.dart';
@@ -109,6 +110,7 @@ class MyApp extends StatelessWidget {
           '/bongkarkd': (context) => KdBongkarSelectedScreen(),
           '/kayu-bulat': (context) => KayuBulatScreen(),
           '/qc-sawmill': (context) => QcSawmillHeaderScreen(),
+          '/proses-produksi': (context) => const ProsesProduksiMenuScreen(),
         },
       ),
     );

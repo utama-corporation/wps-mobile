@@ -6,7 +6,7 @@ Future<bool> showConfirmSaveSheet(
     BuildContext context, {
       required int draftsCount,
       required int deletedCount,
-      Color brandColor = const Color(0xFF755330),
+      Color brandColor = const Color(0xFF2E6F5D),
     }) async {
   final result = await showModalBottomSheet<bool>(
     context: context,

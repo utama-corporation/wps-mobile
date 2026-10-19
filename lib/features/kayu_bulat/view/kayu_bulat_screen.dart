@@ -16,7 +16,7 @@ class KayuBulatScreen extends StatefulWidget {
 }
 
 class _KayuBulatScreenState extends State<KayuBulatScreen> {
-  static const Color _brand = Color(0xFF755330);
+  static const Color _brand = Color(0xFF2E6F5D);
 
   @override
   void initState() {
@@ -104,7 +104,7 @@ class _KayuBulatScreenState extends State<KayuBulatScreen> {
                       icon: Icons.badge_outlined,
                       label: "Suket",
                       value: item.suket,
-                      color: Colors.brown.shade400,
+                      color: const Color(0xFF658B81),
                     ),
                     InfoRowData(
                       icon: Icons.local_shipping_outlined,

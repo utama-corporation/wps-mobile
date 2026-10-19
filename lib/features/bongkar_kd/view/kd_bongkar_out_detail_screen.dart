@@ -80,7 +80,7 @@ class _KDBongkarOutDetailScreenState extends State<KDBongkarOutDetailScreen>
   PreferredSizeWidget _buildSimpleAppBar(KDBongkarDetailViewModel kdDetailVM) {
     return AppBar(
       elevation: 0,
-      backgroundColor: const Color(0xFF755330),
+      backgroundColor: const Color(0xFF2E6F5D),
       foregroundColor: Colors.white,
       iconTheme: const IconThemeData(color: Colors.white),
       title: Column(
@@ -99,7 +99,7 @@ class _KDBongkarOutDetailScreenState extends State<KDBongkarOutDetailScreen>
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(50),
         child: Container(
-          color: const Color(0xFF755330),
+          color: const Color(0xFF2E6F5D),
           child: TabBar(
             controller: _tabController,
             labelColor: Colors.white,
@@ -173,7 +173,7 @@ class _KDBongkarOutDetailScreenState extends State<KDBongkarOutDetailScreen>
                     value: progress,
                     strokeWidth: 4,
                     backgroundColor: Colors.grey.shade200,
-                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF755330)),
+                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF2E6F5D)),
                   ),
                 ),
                 Positioned.fill(
@@ -183,7 +183,7 @@ class _KDBongkarOutDetailScreenState extends State<KDBongkarOutDetailScreen>
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF755330),
+                        color: Color(0xFF2E6F5D),
                       ),
                     ),
                   ),
@@ -215,7 +215,7 @@ class _KDBongkarOutDetailScreenState extends State<KDBongkarOutDetailScreen>
                   ),
                   child: const Icon(
                     Icons.location_on,
-                    color: Color(0xFF755330),
+                    color: Color(0xFF2E6F5D),
                     size: 20,
                   ),
                 ),
@@ -248,7 +248,7 @@ class _KDBongkarOutDetailScreenState extends State<KDBongkarOutDetailScreen>
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF755330)),
+          borderSide: const BorderSide(color: Color(0xFF2E6F5D)),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         hintStyle: const TextStyle(fontSize: 14, color: Colors.grey),
@@ -613,7 +613,7 @@ class _KDBongkarOutDetailScreenState extends State<KDBongkarOutDetailScreen>
                         style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF755330),
+                          color: Color(0xFF2E6F5D),
                         ),
                       ),
                     ),
@@ -663,7 +663,7 @@ class _KDBongkarOutDetailScreenState extends State<KDBongkarOutDetailScreen>
   Widget _buildSpeedDial() {
     return SpeedDial(
       animatedIcon: AnimatedIcons.menu_close,
-      backgroundColor: const Color(0xFF755330),
+      backgroundColor: const Color(0xFF2E6F5D),
       foregroundColor: Colors.white,
       visible: true,
       spaceBetweenChildren: 16,
@@ -675,7 +675,7 @@ class _KDBongkarOutDetailScreenState extends State<KDBongkarOutDetailScreen>
           label: 'Scan QR Code',
           labelStyle: const TextStyle(fontWeight: FontWeight.w600),
           backgroundColor: Colors.white,
-          foregroundColor: const Color(0xFF755330),
+          foregroundColor: const Color(0xFF2E6F5D),
           onTap: () {
             if (widget.tglKeluar != '-') {
               _showScanBarQRCode(context);

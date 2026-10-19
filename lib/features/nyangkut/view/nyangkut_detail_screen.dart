@@ -63,7 +63,7 @@ class _NyangkutDetailScreenState extends State<NyangkutDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('${widget.tgl} ( ${widget.noNyangkut} )', style: const TextStyle(color: Colors.white)),
-        backgroundColor: const Color(0xFF755330),
+        backgroundColor: const Color(0xFF2E6F5D),
       ),
       body: Column(
         children: [
@@ -149,7 +149,7 @@ class _NyangkutDetailScreenState extends State<NyangkutDetailScreen> {
 
       floatingActionButton: SpeedDial(
         animatedIcon: AnimatedIcons.menu_close,
-        backgroundColor: const Color(0xFF755330),
+        backgroundColor: const Color(0xFF2E6F5D),
         foregroundColor: Colors.white,
         visible: true,
         curve: Curves.linear,

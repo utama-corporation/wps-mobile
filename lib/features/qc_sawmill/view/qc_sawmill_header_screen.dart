@@ -47,7 +47,7 @@ class _QcSawmillHeaderScreenState extends State<QcSawmillHeaderScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const brandColor = Color(0xFF755330);
+    const brandColor = Color(0xFF2E6F5D);
 
     return Consumer<QcSawmillHeaderViewModel>(
       builder: (context, vm, _) {

@@ -70,7 +70,7 @@ class _StockOpnameInputScreenState extends State<StockOpnameInputScreen> {
           style: const TextStyle(color: Colors.white),
         ),
         automaticallyImplyLeading: false,
-        backgroundColor: const Color(0xFF755330),
+        backgroundColor: const Color(0xFF2E6F5D),
         actions: [
           IconButton(
             icon: const Icon(Icons.filter_list, color: Colors.white),
@@ -172,7 +172,7 @@ class _StockOpnameInputScreenState extends State<StockOpnameInputScreen> {
       ),
       floatingActionButton: SpeedDial(
         animatedIcon: AnimatedIcons.menu_close,
-        backgroundColor: const Color(0xFF755330),
+        backgroundColor: const Color(0xFF2E6F5D),
         foregroundColor: Colors.white,
         visible: true,
         curve: Curves.linear,

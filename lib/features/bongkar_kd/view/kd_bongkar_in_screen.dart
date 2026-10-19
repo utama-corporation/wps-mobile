@@ -19,7 +19,7 @@ class KdBongkarInScreen extends StatelessWidget {
           .fetchKDBongkarList(isPending: true);
     });
 
-    const brandColor = Color(0xFF755330);
+    const brandColor = Color(0xFF2E6F5D);
 
     return Scaffold(
       appBar: AppBar(
@@ -109,7 +109,7 @@ class _EmptyOrError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const brandColor = Color(0xFF755330);
+    const brandColor = Color(0xFF2E6F5D);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,

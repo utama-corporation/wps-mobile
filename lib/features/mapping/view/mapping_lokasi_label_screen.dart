@@ -27,8 +27,8 @@ class MappingLokasiLabelScreen extends StatefulWidget {
 }
 
 class _MappingLokasiLabelScreenState extends State<MappingLokasiLabelScreen> {
-  static const _brown = Color(0xFF755330);
-  static const _brownDark = Color(0xFF5A3F24);
+  static const _brand = Color(0xFF2E6F5D);
+  static const _brandDark = Color(0xFF334B44);
 
   @override
   void initState() {
@@ -60,7 +60,7 @@ class _MappingLokasiLabelScreenState extends State<MappingLokasiLabelScreen> {
       backgroundColor: const Color(0xFFF4F1EC),
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: _brown,
+        backgroundColor: _brand,
         foregroundColor: Colors.white,
         title: Text(widget.idLokasi,
             style: const TextStyle(
@@ -71,8 +71,8 @@ class _MappingLokasiLabelScreenState extends State<MappingLokasiLabelScreen> {
           return Column(
             children: [
               _Header(
-                brown: _brown,
-                brownDark: _brownDark,
+                brand: _brand,
+                brandDark: _brandDark,
                 totalLabel: vm.totalLabelData,
                 totalPcs: vm.totalJumlah,
                 totalM3: vm.totalM3,
@@ -85,7 +85,7 @@ class _MappingLokasiLabelScreenState extends State<MappingLokasiLabelScreen> {
         },
       ),
       floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: _brown,
+        backgroundColor: _brand,
         foregroundColor: Colors.white,
         onPressed: _openScanner,
         icon: const Icon(Icons.qr_code_scanner_rounded),
@@ -118,7 +118,7 @@ class _MappingLokasiLabelScreenState extends State<MappingLokasiLabelScreen> {
     }
 
     return RefreshIndicator(
-      color: _brown,
+      color: _brand,
       onRefresh: _refresh,
       child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 96),
@@ -133,8 +133,8 @@ class _MappingLokasiLabelScreenState extends State<MappingLokasiLabelScreen> {
 // Header brand + statistik
 // ---------------------------------------------------------------------------
 class _Header extends StatelessWidget {
-  final Color brown;
-  final Color brownDark;
+  final Color brand;
+  final Color brandDark;
   final int totalLabel;
   final int totalPcs;
   final String totalM3;
@@ -142,8 +142,8 @@ class _Header extends StatelessWidget {
   final bool loading;
 
   const _Header({
-    required this.brown,
-    required this.brownDark,
+    required this.brand,
+    required this.brandDark,
     required this.totalLabel,
     required this.totalPcs,
     required this.totalM3,
@@ -159,7 +159,7 @@ class _Header extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [brown, brownDark],
+          colors: [brand, brandDark],
         ),
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(24),
@@ -319,7 +319,7 @@ class _LabelCard extends StatelessWidget {
                 Row(
                   children: [
                     Icon(Icons.forest_rounded,
-                        size: 14, color: Colors.brown.shade400),
+                        size: 14, color: const Color(0xFF658B81)),
                     const SizedBox(width: 5),
                     Expanded(
                       child: Text(
@@ -480,7 +480,7 @@ class _LabelDetailSheet extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 16, color: Colors.brown.shade300),
+          Icon(icon, size: 16, color: const Color(0xFF7FA198)),
           const SizedBox(width: 10),
           SizedBox(
             width: 100,
@@ -525,7 +525,7 @@ class _DetailTable extends StatelessWidget {
           dataRowMaxHeight: 40,
           headingTextStyle: const TextStyle(
               fontWeight: FontWeight.bold,
-              color: Color(0xFF5A3F24),
+              color: Color(0xFF334B44),
               fontSize: 11.5),
           dataTextStyle: const TextStyle(fontSize: 11.5, color: Colors.black87),
           columnSpacing: 28,

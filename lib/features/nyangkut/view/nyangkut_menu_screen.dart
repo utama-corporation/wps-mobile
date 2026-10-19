@@ -25,14 +25,14 @@ class NyangkutMenuScreen extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 60, color: Color(0xFF755330)),
+              Icon(icon, size: 60, color: Color(0xFF2E6F5D)),
               const SizedBox(height: 16),
               Text(
                 title,
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF755330),
+                  color: Color(0xFF2E6F5D),
                 ),
               ),
               const SizedBox(height: 8),
@@ -53,7 +53,7 @@ class NyangkutMenuScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Pilih Mode', style: TextStyle(color: Colors.white)),
-        backgroundColor: const Color(0xFF755330),
+        backgroundColor: const Color(0xFF2E6F5D),
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 30),

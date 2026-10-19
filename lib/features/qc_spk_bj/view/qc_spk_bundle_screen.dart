@@ -8,7 +8,7 @@ import '../model/qc_spk_line.dart';
 import '../view_model/qc_spk_bundle_view_model.dart';
 import 'qc_spk_bundle_input_screen.dart';
 
-const _brand = Color(0xFF755330);
+const _brand = Color(0xFF2E6F5D);
 
 class QcSpkBundleScreen extends StatefulWidget {
   final String noSPK;

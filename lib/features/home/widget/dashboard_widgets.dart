@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
 /// Token visual bersama untuk komponen dashboard.
-const kBrand = Color(0xFF755330);
+const kBrand = Color(0xFF2E6F5D);
 const kHairline = Color(0xFFE7E1D8);
 const kCanvas = Color(0xFFF4F1EC);
 

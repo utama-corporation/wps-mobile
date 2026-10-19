@@ -24,6 +24,15 @@ class ApiConstants {
 
   // QC Barang Jadi (SPK)
   static String get qcSpkBj => '$baseUrl/api/qc-spk-bj';
+
+  // Proses Produksi (S4S, Finger Joint, Moulding, Laminating,
+  // Cross Cut, Sanding, Barang Jadi/Packing)
+  static String prosesProduksiHistory(String proses) =>
+      '$baseUrl/api/produksi/$proses/history';
+
+  static String prosesProduksiReportPdf(String proses, String noProduksi) =>
+      '$baseUrl/api/produksi/$proses/report/${Uri.encodeComponent(noProduksi)}/pdf';
+
   static String get listNoSO => '$baseUrl/api/no-stock-opname';
   static String get listNyangkut => '$baseUrl/api/nyangkut-list';
   static String get listNoKD => '$baseUrl/api/kd-bongkar';

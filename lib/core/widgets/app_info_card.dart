@@ -22,7 +22,7 @@ class AppInfoCard extends StatelessWidget {
     this.subtitle,
     this.subtitleIcon = Icons.calendar_today,
     this.leadingIcon = Icons.description_outlined,
-    this.brandColor = const Color(0xFF755330),
+    this.brandColor = const Color(0xFF2E6F5D),
     this.rows = const [],
     this.onTap,
     this.onLongPress,

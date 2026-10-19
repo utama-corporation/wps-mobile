@@ -115,7 +115,7 @@ class _QcHeaderFormSheetState extends State<_QcHeaderFormSheet> {
 
   @override
   Widget build(BuildContext context) {
-    const brand = Color(0xFF755330);
+    const brand = Color(0xFF2E6F5D);
     final bottom = MediaQuery.of(context).viewInsets.bottom;
 
     return Container(

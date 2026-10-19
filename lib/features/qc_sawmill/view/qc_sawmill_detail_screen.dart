@@ -28,7 +28,7 @@ class _QcSawmillDetailScreenState extends State<QcSawmillDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const brandColor = Color(0xFF755330);
+    const brandColor = Color(0xFF2E6F5D);
 
     return ChangeNotifierProvider(
       create: (_) => QcSawmillDetailViewModel()..load(widget.noQc),
@@ -351,7 +351,7 @@ class _QcSawmillDetailScreenState extends State<QcSawmillDetailScreen> {
       context,
       draftsCount: _drafts.length,
       deletedCount: _deletedKeys.length,
-      brandColor: const Color(0xFF755330),
+      brandColor: const Color(0xFF2E6F5D),
     );
     if (!confirm) return;
 
@@ -473,7 +473,7 @@ class _BottomButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const brandColor = Color(0xFF755330);
+    const brandColor = Color(0xFF2E6F5D);
 
     return Row(
       children: [

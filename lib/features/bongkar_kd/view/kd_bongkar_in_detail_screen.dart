@@ -65,7 +65,7 @@ class _KDBongkarInDetailScreenState extends State<KDBongkarInDetailScreen> {
 
     return AppBar(
       elevation: 0,
-      backgroundColor: const Color(0xFF755330),
+      backgroundColor: const Color(0xFF2E6F5D),
       foregroundColor: Colors.white,
       iconTheme: const IconThemeData(color: Colors.white),
       title: Column(
@@ -415,7 +415,7 @@ class _KDBongkarInDetailScreenState extends State<KDBongkarInDetailScreen> {
                         style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF755330),
+                          color: Color(0xFF2E6F5D),
                         ),
                       ),
                     ),

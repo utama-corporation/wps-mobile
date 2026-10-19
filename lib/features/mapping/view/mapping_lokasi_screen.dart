@@ -19,8 +19,8 @@ class MappingLokasiScreen extends StatefulWidget {
 }
 
 class _MappingLokasiScreenState extends State<MappingLokasiScreen> {
-  static const _brown = Color(0xFF755330);
-  static const _brownDark = Color(0xFF5A3F24);
+  static const _brand = Color(0xFF2E6F5D);
+  static const _brandDark = Color(0xFF334B44);
 
   final TextEditingController _searchController = TextEditingController();
   String _keyword = '';
@@ -57,7 +57,7 @@ class _MappingLokasiScreenState extends State<MappingLokasiScreen> {
       appBar: AppBar(
         elevation: 0,
         automaticallyImplyLeading: false,
-        backgroundColor: _brown,
+        backgroundColor: _brand,
         foregroundColor: Colors.white,
         title: const Text(
           'Mapping Lokasi',
@@ -69,8 +69,8 @@ class _MappingLokasiScreenState extends State<MappingLokasiScreen> {
           return Column(
             children: [
               _Header(
-                brown: _brown,
-                brownDark: _brownDark,
+                brand: _brand,
+                brandDark: _brandDark,
                 controller: _searchController,
                 totalLokasi: vm.lokasiSummaryList.length,
                 lokasiTerisi:
@@ -117,13 +117,13 @@ class _MappingLokasiScreenState extends State<MappingLokasiScreen> {
     }
 
     return RefreshIndicator(
-      color: _brown,
+      color: _brand,
       onRefresh: vm.fetchLokasiSummary,
       child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 28),
         itemCount: data.length,
         itemBuilder: (context, index) => _LokasiCard(
-          brown: _brown,
+          brand: _brand,
           lokasi: data[index],
           onTap: () => Navigator.push(
             context,
@@ -144,8 +144,8 @@ class _MappingLokasiScreenState extends State<MappingLokasiScreen> {
 // Header: gradient brand + statistik + search
 // ---------------------------------------------------------------------------
 class _Header extends StatelessWidget {
-  final Color brown;
-  final Color brownDark;
+  final Color brand;
+  final Color brandDark;
   final TextEditingController controller;
   final int totalLokasi;
   final int lokasiTerisi;
@@ -153,8 +153,8 @@ class _Header extends StatelessWidget {
   final bool loading;
 
   const _Header({
-    required this.brown,
-    required this.brownDark,
+    required this.brand,
+    required this.brandDark,
     required this.controller,
     required this.totalLokasi,
     required this.lokasiTerisi,
@@ -169,7 +169,7 @@ class _Header extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [brown, brownDark],
+          colors: [brand, brandDark],
         ),
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(24),
@@ -294,12 +294,12 @@ class _StatTile extends StatelessWidget {
 // Kartu lokasi
 // ---------------------------------------------------------------------------
 class _LokasiCard extends StatelessWidget {
-  final Color brown;
+  final Color brand;
   final LokasiSummaryModel lokasi;
   final VoidCallback onTap;
 
   const _LokasiCard({
-    required this.brown,
+    required this.brand,
     required this.lokasi,
     required this.onTap,
   });
@@ -307,7 +307,7 @@ class _LokasiCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool terisi = lokasi.jumlahLabel > 0;
-    final Color accent = terisi ? brown : Colors.grey.shade400;
+    final Color accent = terisi ? brand : Colors.grey.shade400;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
@@ -383,7 +383,7 @@ class _LokasiCard extends StatelessWidget {
                             horizontal: 12, vertical: 5),
                         decoration: BoxDecoration(
                           color: terisi
-                              ? brown.withOpacity(0.12)
+                              ? brand.withOpacity(0.12)
                               : Colors.grey.withOpacity(0.12),
                           borderRadius: BorderRadius.circular(20),
                         ),
@@ -392,14 +392,14 @@ class _LokasiCard extends StatelessWidget {
                           children: [
                             Icon(Icons.label_rounded,
                                 size: 13,
-                                color: terisi ? brown : Colors.grey),
+                                color: terisi ? brand : Colors.grey),
                             const SizedBox(width: 4),
                             Text(
                               '${lokasi.jumlahLabel}',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13,
-                                color: terisi ? brown : Colors.grey,
+                                color: terisi ? brand : Colors.grey,
                               ),
                             ),
                           ],

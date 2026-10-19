@@ -260,7 +260,7 @@ class _QcDetailFormSheetState extends State<_QcDetailFormSheet> {
       ),
       focusedBorder: const OutlineInputBorder(
         borderRadius: BorderRadius.all(Radius.circular(12)),
-        borderSide: BorderSide(color: Color(0xFF755330), width: 1.6),
+        borderSide: BorderSide(color: Color(0xFF2E6F5D), width: 1.6),
       ),
       contentPadding:
       const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -290,14 +290,14 @@ class _SheetHeader extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
-            color: const Color(0xFF755330).withOpacity(.12),
+            color: const Color(0xFF2E6F5D).withOpacity(.12),
             borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: const Color(0xFF755330).withOpacity(.25)),
+            border: Border.all(color: const Color(0xFF2E6F5D).withOpacity(.25)),
           ),
           child: Text(
             '#${noUrut ?? '-'}',
             style: const TextStyle(
-              color: Color(0xFF755330),
+              color: Color(0xFF2E6F5D),
               fontWeight: FontWeight.w700,
               fontSize: 12,
               letterSpacing: .3,
@@ -336,7 +336,7 @@ class _ActionButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const brand = Color(0xFF755330);
+    const brand = Color(0xFF2E6F5D);
     return Row(
       children: [
         Expanded(

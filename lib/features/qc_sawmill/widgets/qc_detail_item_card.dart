@@ -24,7 +24,7 @@ class QcDetailItemBlendCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const brand = Color(0xFF755330);
+    const brand = Color(0xFF2E6F5D);
     final statusColor = isNew ? Colors.blue : (isEdited ? Colors.orange : brand);
 
     // Gunakan displayIndex kalau ada, kalau tidak pakai detail.noUrut

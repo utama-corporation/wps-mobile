@@ -154,7 +154,7 @@ class _UserProfileDialogState extends State<UserProfileDialog> {
                   const SizedBox(width: 12),
                   FilledButton(
                     style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFF755330), // Warna coklat tua
+                      backgroundColor: const Color(0xFF2E6F5D), // Warna coklat tua
                     ),
                     onPressed: _validateForm,
                     child: const Text('Simpan'),

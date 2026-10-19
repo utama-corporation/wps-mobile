@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/services/permission_storage.dart';
+import '../../proses_produksi/model/proses_produksi_process.dart';
 import '../view_model/dashboard_summary_view_model.dart';
 import '../widget/dashboard_widgets.dart';
 import '../widget/user_profile_dialog.dart';
@@ -86,7 +87,8 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final isLoading = _permissions == null;
-    final brand = const Color(0xFF755330);
+    //final brand = const Color(0xFF2E6F5D);
+    final brand = const Color(0xFF17382F);
 
     return WillPopScope(
       onWillPop: () async {
@@ -222,7 +224,7 @@ class _HomeScreenState extends State<HomeScreen> {
           title: 'Bongkar KD',
           subtitle: 'Kelola posisi setelah KD',
           icon: Icons.warehouse_outlined,
-          color: const Color(0xFF755330),
+          color: const Color(0xFF2E6F5D),
           onTap: _can('bongkar_kd:read')
               ? () => Navigator.pushNamed(context, '/bongkarkd')
               : null,
@@ -527,20 +529,23 @@ class _HomeScreenState extends State<HomeScreen> {
   // =================== SECTION: MENU (GRID) ===================
   Widget _buildModuleGrid(BuildContext context) {
     final items = <_ModuleSpec>[
-      _ModuleSpec('stock_opname:read', 'Stock Opname', 'Kelola stok kayu',
+      _ModuleSpec(['stock_opname:read'], 'Stock Opname', 'Kelola stok kayu',
           Icons.checklist_rtl_outlined, '/stockopname'),
-      _ModuleSpec('mapping:read', 'Mapping', 'Posisi & lokasi kayu',
+      _ModuleSpec(['mapping:read'], 'Mapping', 'Posisi & lokasi kayu',
           Icons.location_on_outlined, '/mapping'),
-      _ModuleSpec('bongkar_kd:read', 'Bongkar KD', 'Posisi setelah proses KD',
+      _ModuleSpec(['bongkar_kd:read'], 'Bongkar KD', 'Posisi setelah proses KD',
           Icons.warehouse_outlined, '/bongkarkd'),
-      _ModuleSpec('nyangkut:read', 'Nyangkut', 'Cek label tersangkut',
+      _ModuleSpec(['nyangkut:read'], 'Nyangkut', 'Cek label tersangkut',
           Icons.pending_actions_outlined, '/nyangkut'),
-      _ModuleSpec('kayu_bulat:read', 'Kayu Bulat', 'Data kayu bulat',
+      _ModuleSpec(['kayu_bulat:read'], 'Kayu Bulat', 'Data kayu bulat',
           Icons.forest_outlined, '/kayu-bulat'),
-      _ModuleSpec('qc_sawmill:read', 'QC Sawmill', 'Quality control sawmill',
+      _ModuleSpec(['qc_sawmill:read'], 'QC Sawmill', 'Quality control sawmill',
           Icons.rule_folder_outlined, '/qc-sawmill'),
-      _ModuleSpec('spk:read', 'QC Barang Jadi', 'QC per bundle sesuai SPK',
+      _ModuleSpec(['spk:read'], 'QC Barang Jadi', 'QC per bundle sesuai SPK',
           Icons.fact_check_outlined, '/qc-spk-bj'),
+      _ModuleSpec(prosesProduksiPermissions, 'Proses Produksi',
+          'S4S s/d barang jadi', Icons.precision_manufacturing_outlined,
+          '/proses-produksi'),
     ];
 
     return GridView.count(
@@ -556,7 +561,7 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: m.icon,
             title: m.title,
             subtitle: m.subtitle,
-            allowed: _can(m.perm),
+            allowed: m.perms.any(_can),
             onTap: () => Navigator.pushNamed(context, m.route),
           ),
       ],
@@ -625,7 +630,7 @@ class _HomeScreenState extends State<HomeScreen> {
     required VoidCallback? onTap,
     String? disabledTooltip,
   }) {
-    final color = const Color(0xFF755330);
+    final color = const Color(0xFF2E6F5D);
     final btn = ElevatedButton.icon(
       onPressed: onTap,
       style: ElevatedButton.styleFrom(
@@ -725,7 +730,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ElevatedButton(
               onPressed: () => Navigator.of(context).pop(true),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF755330),
+                backgroundColor: const Color(0xFF2E6F5D),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8)),
               ),
@@ -740,11 +745,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
 /// Definisi satu modul di grid menu.
 class _ModuleSpec {
-  final String perm;
+  /// Permission yang dimiliki user. Modul tampil bila user punya salah satu
+  /// kode di daftar ini (modul dengan satu permission cukup satu kode).
+  final List<String> perms;
   final String title;
   final String subtitle;
   final IconData icon;
   final String route;
   const _ModuleSpec(
-      this.perm, this.title, this.subtitle, this.icon, this.route);
+      this.perms, this.title, this.subtitle, this.icon, this.route);
 }
