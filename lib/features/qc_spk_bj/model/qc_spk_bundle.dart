@@ -73,6 +73,7 @@ class QcSpkBundle {
 
   /// URL foto: jadikan absolut (server kirim path relatif "/storage/...").
   static String? _photoUrl(dynamic v) {
+    if (v is! String) return null;
     final s = _s(v);
     if (s == null) return null;
     if (s.startsWith('http://') || s.startsWith('https://')) return s;
@@ -96,9 +97,12 @@ class QcSpkBundle {
   /// Baca foto sebuah bidang: utamakan array (`fotoTebalUrls`), fallback ke
   /// scalar lama (`fotoTebalUrl`) agar data sebelum upgrade tetap tampil.
   static List<String> _photos(Map<String, dynamic> j, String field) {
-    final list =
-        _photoUrlList(j['${field}sUrl'], limit: maxPhotosForField(field));
+    final limit = maxPhotosForField(field);
+    final list = _photoUrlList(j['${field}Urls'], limit: limit);
     if (list.isNotEmpty) return list;
+    // Server versi lama bisa mengirim array di key singular.
+    final alt = _photoUrlList(j['${field}Url'], limit: limit);
+    if (alt.isNotEmpty) return alt;
     final single = _photoUrl(j['${field}Url']);
     return single == null ? const [] : [single];
   }
